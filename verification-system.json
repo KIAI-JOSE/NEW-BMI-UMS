@@ -1,0 +1,325 @@
+{
+  "name": "BMI University Certificate Verification System",
+  "version": "1.0.0",
+  "description": "QR Code-based certificate verification system for BMI University graduation certificates with online and offline verification capabilities",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bmi-university/certificate-verification"
+  },
+  "author": "BMI University - Office of the Registrar",
+  "license": "MIT",
+  "keywords": ["certificate", "verification", "qr-code", "blockchain", "education", "graduation"],
+  
+  "system_overview": {
+    "purpose": "Verify the authenticity of BMI University graduation certificates using QR codes",
+    "verification_methods": ["online", "offline"],
+    "security_features": [
+      "QR code verification",
+      "Serial number validation",
+      "Content hash verification",
+      "Blockchain ledger (future)",
+      "Digital signatures",
+      "Tamper-evident design"
+    ]
+  },
+
+  "certificate_structure": {
+    "serial_format": "BMI-{YEAR}-{STUDENT_ID_LAST_6_DIGITS}",
+    "hash_algorithm": "SHA-256 (simulated)",
+    "qr_content": "{origin}/verify?id={SERIAL}&hash={HASH_SUBSTRING}",
+    "security_elements": [
+      "Guilloché pattern background",
+      "Microtext security borders",
+      "Official watermark",
+      "Yellow corner decorations",
+      "Digital seal"
+    ]
+  },
+
+  "verification_endpoints": {
+    "online_verification": {
+      "url": "/verify",
+      "method": "GET",
+      "parameters": {
+        "id": "Certificate serial number",
+        "hash": "Content hash substring (first 8 characters)"
+      },
+      "response_format": {
+        "valid": "boolean",
+        "certificate_data": "object",
+        "verification_timestamp": "ISO string",
+        "verification_method": "string"
+      }
+    },
+    "offline_verification": {
+      "method": "QR code scanning with local validation",
+      "requirements": ["QR scanner", "Certificate database", "Hash validation"]
+    }
+  },
+
+  "database_schema": {
+    "certificates": {
+      "id": "Primary key",
+      "serial_number": "Unique certificate serial (BMI-YYYY-XXXXXX)",
+      "student_id": "Student identifier",
+      "student_name": "Full name",
+      "degree_title": "Degree/diploma title",
+      "graduation_class": "Honours classification",
+      "faculty": "Academic faculty",
+      "department": "Academic department",
+      "gpa": "Grade point average",
+      "issue_date": "Certificate issue date",
+      "graduation_date": "Graduation ceremony date",
+      "content_hash": "SHA-256 hash of certificate content",
+      "qr_code_data": "QR code content",
+      "verification_url": "Full verification URL",
+      "status": "active|revoked|suspended",
+      "created_at": "Record creation timestamp",
+      "updated_at": "Last modification timestamp",
+      "verified_count": "Number of verification attempts",
+      "last_verified": "Last verification timestamp"
+    },
+    "verification_logs": {
+      "id": "Primary key",
+      "certificate_id": "Foreign key to certificates",
+      "verification_method": "online|offline|qr_scan",
+      "ip_address": "Verifier IP address",
+      "user_agent": "Browser/device information",
+      "verification_result": "valid|invalid|expired|revoked",
+      "timestamp": "Verification timestamp",
+      "location": "Geographic location (if available)"
+    }
+  },
+
+  "api_specification": {
+    "base_url": "https://verify.bmi.edu/api/v1",
+    "endpoints": [
+      {
+        "path": "/verify/{serial}",
+        "method": "GET",
+        "description": "Verify certificate by serial number",
+        "parameters": {
+          "serial": "Certificate serial number",
+          "hash": "Optional content hash for additional verification"
+        },
+        "responses": {
+          "200": {
+            "description": "Certificate found and verified",
+            "schema": {
+              "valid": true,
+              "certificate": {
+                "serial_number": "BMI-2024-123456",
+                "student_name": "John Doe",
+                "degree_title": "BACHELOR OF THEOLOGY",
+                "graduation_class": "First Class Honours",
+                "faculty": "Theology",
+                "issue_date": "2024-12-21",
+                "status": "active"
+              },
+              "verification": {
+                "timestamp": "2024-12-21T10:30:00Z",
+                "method": "online",
+                "hash_verified": true
+              }
+            }
+          },
+          "404": {
+            "description": "Certificate not found",
+            "schema": {
+              "valid": false,
+              "error": "Certificate not found",
+              "code": "CERT_NOT_FOUND"
+            }
+          },
+          "410": {
+            "description": "Certificate revoked",
+            "schema": {
+              "valid": false,
+              "error": "Certificate has been revoked",
+              "code": "CERT_REVOKED",
+              "revocation_date": "2024-11-15T09:00:00Z"
+            }
+          }
+        }
+      },
+      {
+        "path": "/verify/qr",
+        "method": "POST",
+        "description": "Verify certificate via QR code data",
+        "body": {
+          "qr_data": "Full QR code content or verification URL"
+        },
+        "responses": {
+          "200": "Same as /verify/{serial} endpoint"
+        }
+      },
+      {
+        "path": "/certificate/{serial}/details",
+        "method": "GET",
+        "description": "Get detailed certificate information",
+        "responses": {
+          "200": {
+            "description": "Detailed certificate information",
+            "schema": {
+              "certificate": "Full certificate details",
+              "student": "Student information",
+              "program": "Academic program details",
+              "verification_history": "Recent verification attempts"
+            }
+          }
+        }
+      }
+    ]
+  },
+
+  "security_measures": {
+    "rate_limiting": {
+      "requests_per_minute": 60,
+      "requests_per_hour": 1000,
+      "burst_limit": 10
+    },
+    "authentication": {
+      "public_verification": true,
+      "admin_endpoints": "API key required",
+      "bulk_verification": "Authentication required"
+    },
+    "data_protection": {
+      "encryption": "AES-256",
+      "hashing": "SHA-256",
+      "ssl_required": true,
+      "cors_policy": "Restricted origins"
+    },
+    "audit_logging": {
+      "all_verifications": true,
+      "failed_attempts": true,
+      "suspicious_activity": true,
+      "data_retention": "7 years"
+    }
+  },
+
+  "offline_verification": {
+    "qr_scanner_app": {
+      "name": "BMI Certificate Verifier",
+      "platforms": ["iOS", "Android", "Web"],
+      "features": [
+        "QR code scanning",
+        "Offline hash validation",
+        "Certificate database sync",
+        "Verification history",
+        "Fraud detection"
+      ]
+    },
+    "validation_process": [
+      "Scan QR code",
+      "Extract serial number and hash",
+      "Check local certificate database",
+      "Validate content hash",
+      "Display verification result",
+      "Log verification attempt"
+    ]
+  },
+
+  "integration_requirements": {
+    "frontend_components": [
+      "VerificationPage.tsx",
+      "QRScanner.tsx",
+      "CertificateDisplay.tsx",
+      "VerificationResult.tsx"
+    ],
+    "backend_services": [
+      "VerificationService",
+      "CertificateRepository",
+      "HashValidationService",
+      "AuditLogService"
+    ],
+    "external_dependencies": [
+      "QR code scanner library",
+      "Hash validation utilities",
+      "Database connection",
+      "Logging framework"
+    ]
+  },
+
+  "deployment_configuration": {
+    "environment_variables": {
+      "VERIFICATION_DB_URL": "Database connection string",
+      "HASH_SECRET_KEY": "Secret key for hash validation",
+      "API_RATE_LIMIT": "Rate limiting configuration",
+      "CORS_ORIGINS": "Allowed origins for CORS",
+      "LOG_LEVEL": "Logging level"
+    },
+    "infrastructure": {
+      "database": "PostgreSQL or MongoDB",
+      "cache": "Redis for rate limiting",
+      "cdn": "CloudFlare for global distribution",
+      "monitoring": "Application performance monitoring"
+    }
+  },
+
+  "testing_strategy": {
+    "unit_tests": [
+      "Hash validation functions",
+      "Serial number parsing",
+      "QR code generation/parsing",
+      "Database operations"
+    ],
+    "integration_tests": [
+      "API endpoint testing",
+      "Database integration",
+      "QR code end-to-end flow",
+      "Rate limiting behavior"
+    ],
+    "security_tests": [
+      "SQL injection prevention",
+      "XSS protection",
+      "Rate limiting effectiveness",
+      "Hash collision resistance"
+    ]
+  },
+
+  "maintenance_procedures": {
+    "certificate_lifecycle": {
+      "issuance": "Automatic upon graduation",
+      "verification": "Real-time validation",
+      "revocation": "Manual process with audit trail",
+      "archival": "Long-term storage after 10 years"
+    },
+    "database_maintenance": {
+      "backup_frequency": "Daily",
+      "cleanup_schedule": "Monthly log cleanup",
+      "index_optimization": "Weekly",
+      "performance_monitoring": "Continuous"
+    }
+  },
+
+  "compliance_requirements": {
+    "data_privacy": {
+      "gdpr_compliance": true,
+      "data_minimization": true,
+      "consent_management": true,
+      "right_to_erasure": "Supported with audit trail"
+    },
+    "educational_standards": {
+      "accreditation_requirements": "Meets international standards",
+      "audit_trail": "Complete verification history",
+      "fraud_prevention": "Multi-layer security",
+      "interoperability": "Standard certificate formats"
+    }
+  },
+
+  "future_enhancements": {
+    "blockchain_integration": {
+      "description": "Immutable certificate ledger",
+      "technology": "Ethereum or Hyperledger",
+      "benefits": ["Tamper-proof records", "Decentralized verification", "Global trust"]
+    },
+    "ai_fraud_detection": {
+      "description": "Machine learning-based fraud detection",
+      "features": ["Pattern recognition", "Anomaly detection", "Risk scoring"]
+    },
+    "mobile_app": {
+      "description": "Dedicated mobile verification app",
+      "features": ["Offline verification", "Batch scanning", "Employer tools"]
+    }
+  }
+}

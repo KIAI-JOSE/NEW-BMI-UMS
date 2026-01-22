@@ -20,6 +20,7 @@ import Reports from './components/Reports';
 import AIModal from './components/AIModal';
 import Settings from './components/Settings';
 import Login from './components/Login';
+import VerificationPage from './components/VerificationPage';
 import { Student, StaffMember, Transaction, Course, LibraryItem } from './types';
 
 const initialCourses: Course[] = [
@@ -107,6 +108,16 @@ function App() {
   const [theme, setTheme] = useState('light');
   const [logo, setLogo] = useState("https://i.ibb.co/Gv2vPdJC/BMI-PNG.png");
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [showVerificationPage, setShowVerificationPage] = useState(false);
+
+  // Check if this is a verification URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isVerificationUrl = urlParams.has('id') || window.location.pathname.includes('/verify');
+    if (isVerificationUrl) {
+      setShowVerificationPage(true);
+    }
+  }, []);
 
   // Core Data States
   const [students, setStudents] = useState<Student[]>(() => {
@@ -175,6 +186,11 @@ function App() {
     setTransactions(prev => [newTx, ...prev]);
   };
 
+  // Handle verification page (public access)
+  if (showVerificationPage) {
+    return <VerificationPage logo={logo} />;
+  }
+
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} logo={logo} />;
   }
@@ -190,6 +206,7 @@ function App() {
       case 'exams': return <Exams />;
       case 'transcripts': return <Transcripts students={students} courses={courses} logo={logo} />;
       case 'certificates': return <Certificates students={students} logo={logo} />;
+      case 'verify': return <VerificationPage logo={logo} />;
       case 'library': return <Library library={library} setLibrary={setLibrary} courses={courses} />;
       case 'hostels': return <Hostels students={students} />;
       case 'medical': return <Medical students={students} />;
