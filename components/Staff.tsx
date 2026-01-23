@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   Briefcase, 
@@ -34,7 +35,7 @@ const Staff: React.FC<StaffProps> = ({ staff, setStaff }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('All Departments');
   const [activeTab, setActiveTab] = useState<'All' | 'Academic' | 'Administrative' | 'Management'>('All');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [newStaff, setNewStaff] = useState({

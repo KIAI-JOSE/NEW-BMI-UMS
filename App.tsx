@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Students from './components/Students';
@@ -20,6 +22,7 @@ import Reports from './components/Reports';
 import AIModal from './components/AIModal';
 import Settings from './components/Settings';
 import Login from './components/Login';
+import Verify from './components/Verify';
 import { Student, StaffMember, Transaction, Course, LibraryItem } from './types';
 
 const initialCourses: Course[] = [
@@ -107,6 +110,8 @@ function App() {
   const [theme, setTheme] = useState('light');
   const [logo, setLogo] = useState("https://i.ibb.co/Gv2vPdJC/BMI-PNG.png");
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [isPublicVerify, setIsPublicVerify] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Core Data States
   const [students, setStudents] = useState<Student[]>(() => {
@@ -133,6 +138,17 @@ function App() {
     const saved = localStorage.getItem('bmi_data_library');
     return saved ? JSON.parse(saved) : initialLibrary;
   });
+
+  // Handle URL parameters for Public Verification on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    const idParam = params.get('id');
+    
+    if (viewParam === 'verify' || idParam) {
+      setIsPublicVerify(true);
+    }
+  }, []);
 
   // Persist Data
   useEffect(() => { localStorage.setItem('bmi_data_students', JSON.stringify(students)); }, [students]);
@@ -175,6 +191,11 @@ function App() {
     setTransactions(prev => [newTx, ...prev]);
   };
 
+  // Render Public Verification Portal if triggered by URL
+  if (isPublicVerify) {
+    return <Verify students={students} />;
+  }
+
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} logo={logo} />;
   }
@@ -208,11 +229,36 @@ function App() {
   };
 
   return (
-    <div className="flex bg-[#F8F9FA] dark:bg-[#0a0015] min-h-screen font-sans transition-colors duration-300">
-      <Sidebar currentView={currentView} onChangeView={(view) => { if (view === 'ai') setIsAIModalOpen(true); else setCurrentView(view); }} onLogout={() => setIsLoggedIn(false)} logo={logo} />
-      <div className="flex-1 ml-64 overflow-x-hidden">
-        {renderContent()}
+    <div className="flex bg-[#F8F9FA] dark:bg-[#0a0015] min-h-screen font-sans transition-colors duration-300 relative">
+      
+      {/* Drawer Trigger Button */}
+      <button 
+        onClick={() => setIsSidebarOpen(true)}
+        className={`fixed top-6 left-6 z-40 p-3 bg-[#4B0082] text-white rounded-full shadow-lg hover:scale-110 transition-all border-2 border-[#FFD700] ${isSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        aria-label="Open Menu"
+      >
+        <Menu size={24} />
+      </button>
+
+      <Sidebar 
+        currentView={currentView} 
+        onChangeView={(view) => { 
+            if (view === 'ai') setIsAIModalOpen(true); 
+            else setCurrentView(view); 
+        }} 
+        onLogout={() => setIsLoggedIn(false)} 
+        logo={logo}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      
+      {/* Main Content Area */}
+      <div className="flex-1 w-full overflow-x-hidden p-4 md:p-6 lg:p-8 pt-20 md:pt-8">
+        <main className="min-h-[calc(100vh-2rem)] rounded-3xl bg-white/50 dark:bg-black/10 border border-white/20 dark:border-gray-800 shadow-sm relative backdrop-blur-sm overflow-hidden">
+           {renderContent()}
+        </main>
       </div>
+      
       <AIModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} />
     </div>
   );
