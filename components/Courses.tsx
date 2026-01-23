@@ -26,7 +26,7 @@ interface CoursesProps {
 }
 
 const Courses: React.FC<CoursesProps> = ({ theme, courses, setCourses }) => {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeLevel, setActiveLevel] = useState('All Levels');
   const [facultyFilter, setFacultyFilter] = useState('All Faculty');

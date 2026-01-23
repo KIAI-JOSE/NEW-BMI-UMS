@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   Users, 
@@ -25,7 +26,7 @@ interface StudentsProps {
 }
 
 const Students: React.FC<StudentsProps> = ({ students, setStudents }) => {
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [facultyFilter, setFacultyFilter] = useState('All Faculty');
   const [statusFilter, setStatusFilter] = useState('All Status');
