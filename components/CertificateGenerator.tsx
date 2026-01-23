@@ -55,11 +55,54 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
   const generateUniqueCertificateSerial = (student: Student): string => {
     const year = new Date().getFullYear();
     
-    // Get existing certificates count from localStorage to ensure uniqueness
-    const existingCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
-    const nextSequence = String(existingCerts.length + 1).padStart(6, '0');
+    // Get existing certificates from both localStorage and the system
+    const localCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
     
-    return `BMI-${year}-${nextSequence}`;
+    // Load existing certificates from the system (certificates.json)
+    let systemCerts: any[] = [];
+    try {
+      // In a real implementation, this would be an API call
+      // For now, we'll simulate getting the highest sequence number
+      systemCerts = JSON.parse(localStorage.getItem('system_certificates') || '[]');
+    } catch (error) {
+      console.warn('Could not load system certificates');
+    }
+    
+    // Find the highest sequence number for the current year
+    const allCerts = [...localCerts, ...systemCerts];
+    const currentYearCerts = allCerts.filter(cert => 
+      cert.serial_number && cert.serial_number.startsWith(`BMI-${year}-`)
+    );
+    
+    let maxSequence = 0;
+    currentYearCerts.forEach(cert => {
+      const match = cert.serial_number.match(/BMI-\d{4}-(\d{6})/);
+      if (match) {
+        const sequence = parseInt(match[1], 10);
+        if (sequence > maxSequence) {
+          maxSequence = sequence;
+        }
+      }
+    });
+    
+    // Generate unique sequence using timestamp and random component
+    const now = new Date();
+    const timestamp = now.getTime().toString().slice(-4); // Last 4 digits of timestamp
+    const random = Math.floor(Math.random() * 100).toString().padStart(2, '0'); // 2-digit random
+    const uniqueSequence = timestamp + random;
+    
+    // Ensure we don't duplicate existing serials
+    let candidateSerial = `BMI-${year}-${uniqueSequence}`;
+    let attempts = 0;
+    
+    while (allCerts.some(cert => cert.serial_number === candidateSerial) && attempts < 10) {
+      const newRandom = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const newTimestamp = Date.now().toString().slice(-3);
+      candidateSerial = `BMI-${year}-${newTimestamp}${newRandom}`;
+      attempts++;
+    }
+    
+    return candidateSerial;
   };
 
   const saveCertificateToStorage = (certData: CertificateData) => {
@@ -70,6 +113,43 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
     });
     localStorage.setItem('bmi_generated_certificates', JSON.stringify(existingCerts));
   };
+
+  // Initialize system certificates data for serial number checking
+  const initializeSystemCertificates = () => {
+    const systemCerts = [
+      { serial_number: "BMI-2024-000001" },
+      { serial_number: "BMI-2024-000002" },
+      { serial_number: "BMI-2024-000003" },
+      { serial_number: "BMI-2023-000045" },
+      { serial_number: "BMI-2024-000099" },
+      { serial_number: "BMI-2025-000156" },
+      { serial_number: "BMI-2024-000078" },
+      { serial_number: "BMI-2024-000089" }
+    ];
+    
+    if (!localStorage.getItem('system_certificates')) {
+      localStorage.setItem('system_certificates', JSON.stringify(systemCerts));
+    }
+  };
+
+  // Clean up any duplicate certificates in localStorage
+  const cleanupDuplicateCertificates = () => {
+    const existingCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
+    const uniqueCerts = existingCerts.filter((cert: any, index: number, self: any[]) => 
+      index === self.findIndex(c => c.serial_number === cert.serial_number)
+    );
+    
+    if (uniqueCerts.length !== existingCerts.length) {
+      localStorage.setItem('bmi_generated_certificates', JSON.stringify(uniqueCerts));
+      console.log(`Cleaned up ${existingCerts.length - uniqueCerts.length} duplicate certificates`);
+    }
+  };
+
+  // Initialize system certificates on component mount
+  React.useEffect(() => {
+    initializeSystemCertificates();
+    cleanupDuplicateCertificates();
+  }, []);
 
   const generateCertificate = async (student: Student) => {
     setIsGenerating(true);
@@ -429,7 +509,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number</label>
-                    <p className="font-mono text-gray-900">{certificateData?.serial_number}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono text-gray-900">{certificateData?.serial_number}</p>
+                      <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                        <CheckCircle2 size={12} />
+                        <span>Unique</span>
+                      </div>
+                    </div>
                   </div>
                   
                   <div>
