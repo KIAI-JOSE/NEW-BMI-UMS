@@ -52,49 +52,83 @@ class VerificationService {
   }
 
   /**
-   * Verify certificate by serial number
+   * Verify certificate by serial number using JSON database
    */
   async verifyCertificate(request: VerificationRequest): Promise<CertificateData> {
     try {
-      const url = new URL(`${this.baseUrl}/verify/${request.serial}`);
-      if (request.hash) {
-        url.searchParams.append('hash', request.hash);
-      }
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(this.apiKey && { 'Authorization': `Bearer ${this.apiKey}` })
-        }
-      });
-
+      // First try to fetch from JSON database
+      const response = await fetch('/certificates.json');
       if (!response.ok) {
-        if (response.status === 404) {
-          return {
-            valid: false,
-            error: 'Certificate not found',
-            code: 'CERT_NOT_FOUND'
-          };
-        }
-        if (response.status === 410) {
-          const data = await response.json();
-          return {
-            valid: false,
-            error: 'Certificate has been revoked',
-            code: 'CERT_REVOKED',
-            ...data
-          };
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error('Certificate database unavailable');
       }
 
       const data = await response.json();
+      const certificate = data.certificates.find((cert: any) => 
+        cert.serial_number === request.serial
+      );
+
+      if (!certificate) {
+        return {
+          valid: false,
+          error: 'Certificate not found',
+          code: 'CERT_NOT_FOUND'
+        };
+      }
+
+      if (certificate.status === 'revoked') {
+        return {
+          valid: false,
+          error: 'Certificate has been revoked',
+          code: 'CERT_REVOKED',
+          certificate: {
+            serial_number: certificate.serial_number,
+            student_name: certificate.student_name,
+            degree_title: certificate.degree_title,
+            graduation_class: certificate.graduation_class,
+            faculty: certificate.faculty,
+            department: certificate.department,
+            issue_date: certificate.issue_date,
+            graduation_date: certificate.graduation_date,
+            gpa: certificate.gpa,
+            status: certificate.status
+          }
+        };
+      }
+
+      if (certificate.status === 'suspended') {
+        return {
+          valid: false,
+          error: 'Certificate is temporarily suspended',
+          code: 'CERT_SUSPENDED'
+        };
+      }
+
+      // Verify hash if provided
+      const hashVerified = !request.hash || request.hash === certificate.content_hash;
+
+      // Update verification count (in real app, this would be done server-side)
+      certificate.verification_count = (certificate.verification_count || 0) + 1;
+      certificate.last_verified = new Date().toISOString();
+
       return {
-        ...data,
+        valid: true,
+        certificate: {
+          serial_number: certificate.serial_number,
+          student_name: certificate.student_name,
+          degree_title: certificate.degree_title,
+          graduation_class: certificate.graduation_class,
+          faculty: certificate.faculty,
+          department: certificate.department,
+          issue_date: certificate.issue_date,
+          graduation_date: certificate.graduation_date,
+          gpa: certificate.gpa,
+          status: certificate.status
+        },
         verification: {
-          ...data.verification,
-          method: request.method
+          timestamp: new Date().toISOString(),
+          method: request.method,
+          hash_verified: hashVerified,
+          verification_count: certificate.verification_count
         }
       };
 
@@ -114,49 +148,34 @@ class VerificationService {
     }
   }
   /**
-   * Verify certificate via QR code data
+   * Verify certificate via QR code data using JSON database
    */
   async verifyQRCode(request: QRVerificationRequest): Promise<CertificateData> {
     try {
-      const response = await fetch(`${this.baseUrl}/verify/qr`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(this.apiKey && { 'Authorization': `Bearer ${this.apiKey}` })
-        },
-        body: JSON.stringify({ qr_data: request.qr_data })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Parse QR data to extract serial and hash
+      const parsed = this.parseQRData(request.qr_data);
+      if (!parsed) {
+        return {
+          valid: false,
+          error: 'Invalid QR code format',
+          code: 'INVALID_QR'
+        };
       }
 
-      const data = await response.json();
-      return {
-        ...data,
-        verification: {
-          ...data.verification,
-          method: request.method
-        }
-      };
+      // Use the regular verification method with parsed data
+      return this.verifyCertificate({
+        serial: parsed.serial,
+        hash: parsed.hash,
+        method: 'qr_scan'
+      });
 
     } catch (error) {
       console.error('QR verification error:', error);
       
-      // Try to parse QR data and fallback to regular verification
-      const parsed = this.parseQRData(request.qr_data);
-      if (parsed) {
-        return this.verifyCertificate({
-          serial: parsed.serial,
-          hash: parsed.hash,
-          method: 'qr_scan'
-        });
-      }
-
       return {
         valid: false,
-        error: 'Invalid QR code format',
-        code: 'INVALID_QR'
+        error: 'QR code verification failed',
+        code: 'QR_VERIFICATION_ERROR'
       };
     }
   }

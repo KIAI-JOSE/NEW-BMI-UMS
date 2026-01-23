@@ -249,8 +249,8 @@ const VerificationDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Verification Methods</h3>
           <div className="space-y-4">
             {stats && Object.entries(stats.by_method).map(([method, count]) => {
-              const total = Object.values(stats.by_method).reduce((a, b) => a + b, 0);
-              const percentage = ((count / total) * 100).toFixed(1);
+              const total = Object.values(stats.by_method).reduce((a: number, b: number) => a + b, 0);
+              const percentage = (((count as number) / (total as number)) * 100).toFixed(1);
               
               return (
                 <div key={method} className="flex items-center justify-between">
@@ -278,8 +278,8 @@ const VerificationDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Certificates by Faculty</h3>
           <div className="space-y-4">
             {stats && Object.entries(stats.by_faculty).map(([faculty, count]) => {
-              const total = Object.values(stats.by_faculty).reduce((a, b) => a + b, 0);
-              const percentage = ((count / total) * 100).toFixed(1);
+              const total = Object.values(stats.by_faculty).reduce((a: number, b: number) => a + b, 0);
+              const percentage = (((count as number) / (total as number)) * 100).toFixed(1);
               
               return (
                 <div key={faculty} className="flex items-center justify-between">
