@@ -1,7 +1,7 @@
 {
   "certificates": [
     {
-      "serial_number": "BMI-2024-000101",
+      "serial_number": "BMI-2024-000001",
       "student_name": "James Smith",
       "student_id": "BMI-2023-101",
       "degree_title": "BACHELOR OF THEOLOGY",
@@ -19,7 +19,7 @@
       "last_verified": "2024-12-21T10:30:00Z"
     },
     {
-      "serial_number": "BMI-2024-000102",
+      "serial_number": "BMI-2024-000002",
       "student_name": "Mary Johnson",
       "student_id": "BMI-2023-102",
       "degree_title": "BACHELOR OF COMPUTER SCIENCE",
@@ -37,7 +37,7 @@
       "last_verified": "2024-12-21T09:15:00Z"
     },
     {
-      "serial_number": "BMI-2024-000103",
+      "serial_number": "BMI-2024-000003",
       "student_name": "John Williams",
       "student_id": "BMI-2023-103",
       "degree_title": "BACHELOR OF BUSINESS ADMINISTRATION",
@@ -55,7 +55,7 @@
       "last_verified": "2024-12-21T08:45:00Z"
     },
     {
-      "serial_number": "BMI-2023-000201",
+      "serial_number": "BMI-2023-000045",
       "student_name": "Patricia Jones",
       "student_id": "BMI-2022-201",
       "degree_title": "BACHELOR OF EDUCATION",
@@ -73,7 +73,7 @@
       "last_verified": "2024-12-20T14:20:00Z"
     },
     {
-      "serial_number": "BMI-2024-000999",
+      "serial_number": "BMI-2024-000099",
       "student_name": "Test Revoked",
       "student_id": "BMI-2023-999",
       "degree_title": "BACHELOR OF THEOLOGY",
@@ -93,26 +93,62 @@
       "last_verified": "2024-11-14T16:30:00Z"
     },
     {
-      "serial_number": "BMI-2026-202310",
+      "serial_number": "BMI-2025-000156",
       "student_name": "Future Graduate",
-      "student_id": "BMI-2025-310",
+      "student_id": "BMI-2024-310",
       "degree_title": "MASTER OF DIVINITY",
       "graduation_class": "Distinction",
       "faculty": "Theology",
       "department": "Department of Theology",
-      "issue_date": "2026-12-21",
-      "graduation_date": "2026-12-15",
+      "issue_date": "2025-12-21",
+      "graduation_date": "2025-12-15",
       "gpa": 3.7,
       "status": "active",
-      "content_hash": "00000000",
+      "content_hash": "f1g2h3i4",
       "issued_by": "Office of the Registrar",
       "verification_count": 1,
-      "created_at": "2026-12-21T08:00:00Z",
-      "last_verified": "2026-12-21T08:05:00Z"
+      "created_at": "2025-12-21T08:00:00Z",
+      "last_verified": "2025-12-21T08:05:00Z"
+    },
+    {
+      "serial_number": "BMI-2024-000078",
+      "student_name": "Sarah Wilson",
+      "student_id": "BMI-2023-205",
+      "degree_title": "BACHELOR OF BUSINESS ADMINISTRATION",
+      "graduation_class": "First Class Honours",
+      "faculty": "Business",
+      "department": "Department of Business",
+      "issue_date": "2024-12-21",
+      "graduation_date": "2024-12-15",
+      "gpa": 3.6,
+      "status": "active",
+      "content_hash": "s1w2b3a4",
+      "issued_by": "Office of the Registrar",
+      "verification_count": 12,
+      "created_at": "2024-12-21T08:00:00Z",
+      "last_verified": "2024-12-21T11:45:00Z"
+    },
+    {
+      "serial_number": "BMI-2024-000089",
+      "student_name": "Michael Brown",
+      "student_id": "BMI-2023-301",
+      "degree_title": "BACHELOR OF COMPUTER SCIENCE",
+      "graduation_class": "Second Class Honours (Upper Division)",
+      "faculty": "ICT",
+      "department": "Department of ICT",
+      "issue_date": "2024-12-21",
+      "graduation_date": "2024-12-15",
+      "gpa": 3.1,
+      "status": "active",
+      "content_hash": "m1b2c3s4",
+      "issued_by": "Office of the Registrar",
+      "verification_count": 6,
+      "created_at": "2024-12-21T08:00:00Z",
+      "last_verified": "2024-12-21T09:30:00Z"
     }
   ],
   "metadata": {
-    "total_certificates": 6,
+    "total_certificates": 8,
     "last_updated": "2024-12-21T10:30:00Z",
     "api_version": "1.0.0",
     "institution": "BMI University",

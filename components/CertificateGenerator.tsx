@@ -52,14 +52,31 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
   const [showPreview, setShowPreview] = useState(false);
   const certificateRef = useRef<HTMLDivElement>(null);
 
+  const generateUniqueCertificateSerial = (student: Student): string => {
+    const year = new Date().getFullYear();
+    
+    // Get existing certificates count from localStorage to ensure uniqueness
+    const existingCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
+    const nextSequence = String(existingCerts.length + 1).padStart(6, '0');
+    
+    return `BMI-${year}-${nextSequence}`;
+  };
+
+  const saveCertificateToStorage = (certData: CertificateData) => {
+    const existingCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
+    existingCerts.push({
+      ...certData,
+      generated_at: new Date().toISOString()
+    });
+    localStorage.setItem('bmi_generated_certificates', JSON.stringify(existingCerts));
+  };
+
   const generateCertificate = async (student: Student) => {
     setIsGenerating(true);
     
     try {
-      // Generate serial number
-      const year = new Date().getFullYear();
-      const studentIdSuffix = student.id.slice(-6);
-      const serial = `BMI-${year}-${studentIdSuffix}`;
+      // Generate unique sequential serial number
+      const serial = generateUniqueCertificateSerial(student);
       
       // Create certificate data
       const certData: CertificateData = {
@@ -95,6 +112,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
 
       setCertificateData(certData);
       setShowPreview(true);
+      
+      // Save certificate to local storage for tracking
+      saveCertificateToStorage(certData);
       
     } catch (error) {
       console.error('Error generating certificate:', error);
