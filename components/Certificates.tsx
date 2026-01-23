@@ -266,7 +266,9 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
         const docHash = generateCertificateHash(selectedStudent, serialNumber);
         
         // Dynamic Verification URL linked to the current app origin
-        const verifyUrl = `${window.location.origin}/verify?id=${serialNumber}&hash=${docHash.substring(0,8)}`;
+        // Using `window.location.origin` + `window.location.pathname` to support GitHub Pages subpaths
+        const baseUrl = window.location.origin + window.location.pathname;
+        const verifyUrl = `${baseUrl}?view=verify&id=${serialNumber}`;
 
         return (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4 overflow-y-auto">
@@ -351,22 +353,25 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                           <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500">Vice Chancellor</p>
                        </div>
                        
-                       {/* Center Group: QR & Seal */}
+                       {/* Center Group: QR & Seal - MATCHED SIZES */}
                        <div className="flex items-center justify-center gap-6 w-1/3">
-                          <div className="p-1 bg-white border border-gray-200">
-                             <img 
-                               src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=${encodeURIComponent(verifyUrl)}`} 
-                               className="w-16 h-16 md:w-20 md:h-20" 
-                               alt="Verification QR"
-                             />
+                          <div className="flex flex-col items-center gap-1">
+                             <div className="p-1 bg-white border border-gray-200">
+                                <img 
+                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=${encodeURIComponent(verifyUrl)}`} 
+                                  className="w-16 h-16 md:w-20 md:h-20" 
+                                  alt="Verification QR"
+                                />
+                             </div>
+                             <span className="text-[6px] font-black uppercase tracking-widest text-gray-400">VERIFY: {serialNumber}</span>
                           </div>
-                          <div className="relative group flex-shrink-0">
-                             <div className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center filter drop-shadow-md">
+                          <div className="relative group flex-shrink-0 p-1">
+                             <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center filter drop-shadow-md">
                                 <img 
                                   src="https://i.ibb.co/LXbLfm1K/shield.png" 
                                   alt="Official Seal"
-                                  className="object-contain"
-                                  style={{ width: '100%', height: '100%', maxWidth: '96px', maxHeight: '96px' }}
+                                  className="object-contain w-full h-full"
+                                  style={{ width: '100%', height: '100%' }}
                                 />
                              </div>
                           </div>
