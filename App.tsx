@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -20,6 +21,7 @@ import Reports from './components/Reports';
 import AIModal from './components/AIModal';
 import Settings from './components/Settings';
 import Login from './components/Login';
+import Verify from './components/Verify';
 import { Student, StaffMember, Transaction, Course, LibraryItem } from './types';
 
 const initialCourses: Course[] = [
@@ -107,6 +109,7 @@ function App() {
   const [theme, setTheme] = useState('light');
   const [logo, setLogo] = useState("https://i.ibb.co/Gv2vPdJC/BMI-PNG.png");
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [isPublicVerify, setIsPublicVerify] = useState(false);
 
   // Core Data States
   const [students, setStudents] = useState<Student[]>(() => {
@@ -133,6 +136,17 @@ function App() {
     const saved = localStorage.getItem('bmi_data_library');
     return saved ? JSON.parse(saved) : initialLibrary;
   });
+
+  // Handle URL parameters for Public Verification on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    const idParam = params.get('id');
+    
+    if (viewParam === 'verify' || idParam) {
+      setIsPublicVerify(true);
+    }
+  }, []);
 
   // Persist Data
   useEffect(() => { localStorage.setItem('bmi_data_students', JSON.stringify(students)); }, [students]);
@@ -174,6 +188,11 @@ function App() {
     };
     setTransactions(prev => [newTx, ...prev]);
   };
+
+  // Render Public Verification Portal if triggered by URL
+  if (isPublicVerify) {
+    return <Verify students={students} />;
+  }
 
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} logo={logo} />;
