@@ -20,6 +20,7 @@ import {
   Scan,
   Zap
 } from 'lucide-react';
+import jsQR from 'jsqr';
 
 interface EnhancedQRScannerProps {
   onScan: (data: string) => void;
@@ -160,39 +161,15 @@ const EnhancedQRScanner: React.FC<EnhancedQRScannerProps> = ({
       // Get image data from canvas
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       
-      // In a real implementation, you would use jsQR library here:
-      // import jsQR from 'jsqr';
-      // const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+      // Use jsQR library for real QR code detection
+      const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
       
-      // For demo purposes, simulate QR detection with pattern matching
-      const simulateQRDetection = () => {
-        // Look for high contrast areas that might be QR codes
-        const data = imageData.data;
-        let blackPixels = 0;
-        let whitePixels = 0;
-        
-        for (let i = 0; i < data.length; i += 4) {
-          const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          if (brightness < 50) blackPixels++;
-          if (brightness > 200) whitePixels++;
-        }
-        
-        const contrastRatio = Math.abs(blackPixels - whitePixels) / (blackPixels + whitePixels);
-        return contrastRatio > 0.3 && Math.random() < 0.05; // 5% chance with good contrast
-      };
-
-      if (simulateQRDetection()) {
-        // Simulate different QR codes based on time
-        const mockQRCodes = [
-          'https://localhost:3000/verify?id=BMI-2024-000101&hash=a1b2c3d4',
-          'https://localhost:3000/verify?id=BMI-2024-000102&hash=b2c3d4e5',
-          'https://localhost:3000/verify?id=BMI-2023-000201&hash=d4e5f6g7',
-          'BMI-2024-000103'
-        ];
-        
-        const qrData = mockQRCodes[Math.floor(Date.now() / 10000) % mockQRCodes.length];
-        setScanResult(qrData);
-        onScan(qrData);
+      if (qrCode) {
+        console.log('QR Code detected:', qrCode.data);
+        setScanResult(qrCode.data);
+        onScan(qrCode.data);
         setIsScanning(false);
         return;
       }
@@ -254,15 +231,21 @@ const EnhancedQRScanner: React.FC<EnhancedQRScannerProps> = ({
         context.drawImage(img, 0, 0);
 
         try {
-          // In real implementation, use jsQR to decode from image
+          // Use jsQR to decode from uploaded image
           const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          // const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+          const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "attemptBoth",
+          });
           
-          // For demo, simulate successful scan from uploaded image
-          const mockQRData = 'https://localhost:3000/verify?id=BMI-2024-000102&hash=b2c3d4e5';
-          setScanResult(mockQRData);
-          onScan(mockQRData);
+          if (qrCode) {
+            console.log('QR Code detected from image:', qrCode.data);
+            setScanResult(qrCode.data);
+            onScan(qrCode.data);
+          } else {
+            setError('No QR code found in the uploaded image');
+          }
         } catch (err) {
+          console.error('QR decoding error:', err);
           setError('Could not read QR code from image');
         }
       };

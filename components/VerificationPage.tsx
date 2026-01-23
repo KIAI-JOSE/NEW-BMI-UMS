@@ -26,6 +26,7 @@ import {
   WifiOff,
   Scan
 } from 'lucide-react';
+import EnhancedQRScanner from './EnhancedQRScanner';
 
 interface CertificateData {
   valid: boolean;
@@ -378,20 +379,12 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
                 </div>
 
                 {showQRScanner && (
-                  <div className="bg-gray-50 rounded-xl p-6 text-center">
-                    <QrCode size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600 mb-4">QR Code Scanner would be implemented here</p>
-                    <p className="text-sm text-gray-500">
-                      In a real implementation, this would use device camera to scan QR codes
-                    </p>
-                    {/* Mock QR scan button for demo */}
-                    <button
-                      onClick={() => handleQRScan('https://localhost:3000/verify?id=BMI-2024-000101&hash=a1b2c3d4')}
-                      className="mt-4 px-4 py-2 bg-[#4B0082] text-white rounded-xl text-sm hover:bg-purple-700 transition-all"
-                    >
-                      Simulate QR Scan (Demo)
-                    </button>
-                  </div>
+                  <EnhancedQRScanner
+                    isOpen={showQRScanner}
+                    onScan={handleQRScan}
+                    onClose={() => setShowQRScanner(false)}
+                    title="Certificate QR Scanner"
+                  />
                 )}
               </div>
 
