@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useRef } from 'react';
+import QRCode from 'qrcode';
 import {
   Download,
   QrCode,
@@ -50,6 +51,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
   const [certificateData, setCertificateData] = useState<CertificateData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [qrCodeImage, setQrCodeImage] = useState<string>('');
   const certificateRef = useRef<HTMLDivElement>(null);
 
   const generateUniqueCertificateSerial = (student: Student): string => {
@@ -105,13 +107,47 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
     return candidateSerial;
   };
 
-  const saveCertificateToStorage = (certData: CertificateData) => {
+  const saveCertificateToStorage = async (certData: CertificateData) => {
+    // Save to localStorage for tracking
     const existingCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
     existingCerts.push({
       ...certData,
       generated_at: new Date().toISOString()
     });
     localStorage.setItem('bmi_generated_certificates', JSON.stringify(existingCerts));
+
+    // Also save to the real certificates database for real-time verification
+    try {
+      // In a real implementation, this would be an API call to save to the database
+      // For now, we'll simulate adding to the certificates.json structure
+      const newCertificate = {
+        serial_number: certData.serial_number,
+        student_name: certData.student_name,
+        student_id: certData.student_id,
+        degree_title: certData.degree_title,
+        graduation_class: certData.graduation_class,
+        faculty: certData.faculty,
+        department: certData.department,
+        issue_date: certData.issue_date,
+        graduation_date: certData.graduation_date,
+        gpa: certData.gpa,
+        status: 'active' as const,
+        content_hash: certData.content_hash,
+        issued_by: 'Office of the Registrar',
+        verification_count: 0,
+        created_at: new Date().toISOString(),
+        last_verified: new Date().toISOString()
+      };
+
+      // Store in a separate localStorage key for real-time verification
+      const realTimeCerts = JSON.parse(localStorage.getItem('realtime_certificates') || '[]');
+      realTimeCerts.push(newCertificate);
+      localStorage.setItem('realtime_certificates', JSON.stringify(realTimeCerts));
+
+      console.log('Certificate saved to real-time database:', newCertificate);
+    } catch (error) {
+      console.error('Error saving certificate to database:', error);
+    }
   };
 
   // Initialize system certificates data for serial number checking
@@ -189,6 +225,31 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
       );
       
       certData.qr_code_data = certData.verification_url;
+
+      // Generate actual QR code image
+      try {
+        const qrCodeDataURL = await QRCode.toDataURL(certData.verification_url, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#4B0082',  // Purple color to match theme
+            light: '#FFFFFF'
+          }
+        });
+        setQrCodeImage(qrCodeDataURL);
+        
+        // Log for verification (can be removed in production)
+        console.log('Generated QR Code for:', {
+          serial: certData.serial_number,
+          student: certData.student_name,
+          url: certData.verification_url,
+          hash: certData.content_hash
+        });
+      } catch (qrError) {
+        console.error('QR code generation error:', qrError);
+        // Fallback to empty string if QR generation fails
+        setQrCodeImage('');
+      }
 
       setCertificateData(certData);
       setShowPreview(true);
@@ -357,7 +418,10 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
             {/* Actions */}
             <div className="flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <button
-                onClick={() => setShowPreview(false)}
+                onClick={() => {
+                  setShowPreview(false);
+                  setQrCodeImage(''); // Clear QR code when going back
+                }}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-all"
               >
                 ← Back to Selection
@@ -464,8 +528,16 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
 
                   {/* Center - QR Code */}
                   <div className="text-center">
-                    <div className="w-24 h-24 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center mb-2">
-                      <QrCode size={48} className="text-gray-400" />
+                    <div className="w-24 h-24 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
+                      {qrCodeImage ? (
+                        <img 
+                          src={qrCodeImage} 
+                          alt="Certificate QR Code" 
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <QrCode size={48} className="text-gray-400" />
+                      )}
                     </div>
                     <p className="text-xs text-gray-500">Scan to verify</p>
                   </div>

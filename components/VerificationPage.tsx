@@ -27,6 +27,7 @@ import {
   Scan
 } from 'lucide-react';
 import EnhancedQRScanner from './EnhancedQRScanner';
+import { verificationService } from '../services/verificationService';
 
 interface CertificateData {
   valid: boolean;
@@ -91,10 +92,10 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
       if (hash) {
         setHashValue(hash);
       }
-      // Auto-verify if both parameters are present
-      if (id && hash) {
+      // Auto-verify when ID is provided (with or without hash)
+      setTimeout(() => {
         handleVerification();
-      }
+      }, 100);
     }
   }, []);
 
@@ -202,9 +203,13 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
         return;
       }
 
-      // In a real implementation, this would call the actual API
-      // For demo purposes, we'll generate mock data
-      const result = generateMockCertificateData(serialNumber, hashValue);
+      // Use the actual verification service instead of mock data
+      const result = await verificationService.verifyCertificate({
+        serial: serialNumber,
+        hash: hashValue || undefined,
+        method: verificationMode as 'online' | 'offline'
+      });
+      
       setVerificationResult(result);
 
     } catch (error) {
@@ -218,24 +223,30 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
     }
   };
 
-  const handleQRScan = (qrContent: string) => {
-    const parsed = parseQRData(qrContent);
-    if (parsed) {
-      setSerialNumber(parsed.serial || '');
-      setHashValue(parsed.hash || '');
-      setQrData(qrContent);
-      setShowQRScanner(false);
+  const handleQRScan = async (qrContent: string) => {
+    try {
+      // Use the verification service to handle QR verification
+      const result = await verificationService.verifyQRCode({
+        qr_data: qrContent,
+        method: 'qr_scan'
+      });
       
-      // Auto-verify after QR scan
-      setTimeout(() => {
-        handleVerification();
-      }, 500);
-    } else {
+      if (result.valid && result.certificate) {
+        setSerialNumber(result.certificate.serial_number);
+        setQrData(qrContent);
+        setVerificationResult(result);
+      } else {
+        setVerificationResult(result);
+      }
+      
+      setShowQRScanner(false);
+    } catch (error) {
       setVerificationResult({
         valid: false,
-        error: 'Invalid QR code format',
-        code: 'INVALID_QR'
+        error: 'QR code verification failed',
+        code: 'QR_VERIFICATION_ERROR'
       });
+      setShowQRScanner(false);
     }
   };
 

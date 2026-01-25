@@ -265,10 +265,9 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
         const serialNumber = generateSerialNumber(selectedStudent);
         const docHash = generateCertificateHash(selectedStudent, serialNumber);
         
-        // Dynamic Verification URL linked to the current app origin
-        // Using `window.location.origin` + `window.location.pathname` to support GitHub Pages subpaths
-        const baseUrl = window.location.origin + window.location.pathname;
-        const verifyUrl = `${baseUrl}?view=verify&id=${serialNumber}`;
+        // Dynamic Verification URL using configurable base URL
+        const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        const verifyUrl = `${baseUrl}/verify?id=${serialNumber}&hash=${docHash}`;
 
         return (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4 overflow-y-auto">

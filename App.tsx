@@ -23,7 +23,6 @@ import AIModal from './components/AIModal';
 import Settings from './components/Settings';
 import Login from './components/Login';
 import VerificationPage from './components/VerificationPage';
-import Verify from './components/Verify';
 import { Student, StaffMember, Transaction, Course, LibraryItem } from './types';
 
 const initialCourses: Course[] = [
@@ -112,14 +111,15 @@ function App() {
   const [logo, setLogo] = useState("https://i.ibb.co/Gv2vPdJC/BMI-PNG.png");
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [showVerificationPage, setShowVerificationPage] = useState(false);
-  const [isPublicVerify, setIsPublicVerify] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Check if this is a verification URL
+  // Check if this is a verification URL - ORIGINAL working method
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const isVerificationUrl = urlParams.has('id') || window.location.pathname.includes('/verify');
-    if (isVerificationUrl) {
+    const idParam = urlParams.get('id');
+    
+    // Handle the ORIGINAL working format: /verify?id=SERIAL&hash=HASH
+    if (window.location.pathname === '/verify' && idParam) {
       setShowVerificationPage(true);
     }
   }, []);
@@ -149,17 +149,6 @@ function App() {
     const saved = localStorage.getItem('bmi_data_library');
     return saved ? JSON.parse(saved) : initialLibrary;
   });
-
-  // Handle URL parameters for Public Verification on load
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const viewParam = params.get('view');
-    const idParam = params.get('id');
-    
-    if (viewParam === 'verify' || idParam) {
-      setIsPublicVerify(true);
-    }
-  }, []);
 
   // Persist Data
   useEffect(() => { localStorage.setItem('bmi_data_students', JSON.stringify(students)); }, [students]);
@@ -202,15 +191,9 @@ function App() {
     setTransactions(prev => [newTx, ...prev]);
   };
 
-  // Handle verification page (public access)
+  // Handle verification page (public access) - ONLY method
   if (showVerificationPage) {
     return <VerificationPage logo={logo} />;
-  }
-
-  // Render Public Verification Portal if triggered by URL (fallback)
-  if (isPublicVerify) {
-    return <Verify students={students} />;
-  }
   }
 
   if (!isLoggedIn) {

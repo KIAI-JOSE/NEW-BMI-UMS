@@ -56,16 +56,24 @@ class VerificationService {
    */
   async verifyCertificate(request: VerificationRequest): Promise<CertificateData> {
     try {
-      // First try to fetch from JSON database
-      const response = await fetch('/certificates.json');
-      if (!response.ok) {
-        throw new Error('Certificate database unavailable');
-      }
+      let certificate = null;
 
-      const data = await response.json();
-      const certificate = data.certificates.find((cert: any) => 
-        cert.serial_number === request.serial
-      );
+      // First check real-time generated certificates
+      const realTimeCerts = JSON.parse(localStorage.getItem('realtime_certificates') || '[]');
+      certificate = realTimeCerts.find((cert: any) => cert.serial_number === request.serial);
+
+      // If not found in real-time, check the static JSON database
+      if (!certificate) {
+        const response = await fetch('/certificates.json');
+        if (!response.ok) {
+          throw new Error('Certificate database unavailable');
+        }
+
+        const data = await response.json();
+        certificate = data.certificates.find((cert: any) => 
+          cert.serial_number === request.serial
+        );
+      }
 
       if (!certificate) {
         return {
@@ -106,9 +114,14 @@ class VerificationService {
       // Verify hash if provided
       const hashVerified = !request.hash || request.hash === certificate.content_hash;
 
-      // Update verification count (in real app, this would be done server-side)
+      // Update verification count
       certificate.verification_count = (certificate.verification_count || 0) + 1;
       certificate.last_verified = new Date().toISOString();
+
+      // Update the real-time storage if this was a real-time certificate
+      if (realTimeCerts.some((cert: any) => cert.serial_number === request.serial)) {
+        localStorage.setItem('realtime_certificates', JSON.stringify(realTimeCerts));
+      }
 
       return {
         valid: true,
@@ -185,7 +198,18 @@ class VerificationService {
    */
   parseQRData(qrContent: string): { serial: string; hash?: string } | null {
     try {
-      // Handle full verification URL
+      // Handle verification URL with query parameters
+      if (qrContent.includes('verify=true')) {
+        const url = new URL(qrContent);
+        const id = url.searchParams.get('id');
+        const hash = url.searchParams.get('hash');
+        
+        if (id && this.validateSerialFormat(id)) {
+          return { serial: id, hash: hash || undefined };
+        }
+      }
+      
+      // Handle legacy /verify URLs
       if (qrContent.includes('/verify?')) {
         const url = new URL(qrContent);
         const id = url.searchParams.get('id');
@@ -385,8 +409,9 @@ class VerificationService {
    * Generate verification URL for certificate
    */
   generateVerificationUrl(serial: string, hash?: string): string {
-    const baseUrl = window.location.origin;
-    const url = new URL(`${baseUrl}/verify`, baseUrl);
+    // Use environment variable for production URL, fallback to current origin for development
+    const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+    const url = new URL(`${baseUrl}/verify`);
     url.searchParams.append('id', serial);
     if (hash) {
       url.searchParams.append('hash', hash);
