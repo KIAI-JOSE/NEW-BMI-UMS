@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   FileSpreadsheet, 
@@ -17,7 +18,9 @@ import {
   ShieldCheck,
   UserCheck,
   Trophy,
-  BookOpen
+  BookOpen,
+  Layout,
+  ClipboardList
 } from 'lucide-react';
 
 interface ExamRecord {
@@ -164,285 +167,296 @@ const Exams: React.FC = () => {
   );
 
   return (
-    <div className="p-8 space-y-8 animate-fade-in pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-100 dark:border-gray-800 pb-8">
-        <div>
-           <div className="flex items-center gap-4 mb-2">
-             <div className="w-3 h-12 bg-[#FFD700] rounded-none"></div>
-             <h2 className="text-3xl font-bold text-[#2E004F] dark:text-white tracking-tight uppercase">Assessment & Academic Standards</h2>
-          </div>
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 ml-7 uppercase tracking-widest">BMI Institutional Oversight • Examination Registry & Grading Ledger</p>
-        </div>
-        <div className="flex items-center gap-4">
-           <div className="flex bg-white dark:bg-gray-800 p-1 rounded-none shadow-sm border border-gray-100 dark:border-gray-700">
-             <button onClick={() => setActiveTab('schedule')} className={`px-6 py-2.5 rounded-none text-[10px] font-black uppercase tracking-widest transition-all relative group ${activeTab === 'schedule' ? 'bg-[#4B0082] text-white shadow-lg' : 'text-gray-400 hover:text-[#4B0082]'}`}>
-                <span className="relative z-10">Exam Schedule</span>
-                {activeTab !== 'schedule' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#4B0082] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>}
-             </button>
-             <button onClick={() => setActiveTab('grading')} className={`px-6 py-2.5 rounded-none text-[10px] font-black uppercase tracking-widest transition-all relative group ${activeTab === 'grading' ? 'bg-[#4B0082] text-white shadow-lg' : 'text-gray-400 hover:text-[#4B0082]'}`}>
-                <span className="relative z-10">Grade Review</span>
-                {activeTab !== 'grading' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#4B0082] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>}
-             </button>
+    <div className="h-full flex flex-col animate-fade-in relative">
+      {/* Sticky Header */}
+      <div className="flex-shrink-0 sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex flex-col md:flex-row justify-between items-center gap-2 shadow-sm min-h-[60px]">
+        <div className="flex items-center gap-3 pl-14 w-full md:w-auto">
+           <div className="w-1 h-5 bg-[#FFD700] rounded-none"></div>
+           <div className="flex flex-col">
+              <h2 className="text-base md:text-lg font-bold text-[#2E004F] dark:text-white tracking-tight uppercase leading-none">Assessment & Academic Standards</h2>
+              <p className="text-[8px] md:text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">BMI Institutional Oversight • Examination Registry</p>
            </div>
-           <button className="flex items-center gap-2 px-8 py-4 bg-[#4B0082] text-white rounded-none shadow-xl hover:bg-black transition-all font-black text-xs uppercase tracking-widest border border-[#FFD700]/30 hover:scale-105 active:scale-95">
-            <Plus size={18} className="text-[#FFD700]" /> {activeTab === 'schedule' ? 'Schedule Exam' : 'Enter Grades'}
+        </div>
+        <div className="flex items-center gap-4 pl-14 md:pl-0 w-full md:w-auto justify-end">
+           <button className="flex items-center gap-2 px-6 py-2 bg-[#4B0082] text-white rounded-none shadow-xl hover:bg-black transition-all font-black text-[9px] uppercase tracking-widest border border-[#FFD700]/30 hover:scale-105 active:scale-95">
+            <Plus size={12} className="text-[#FFD700]" /> {activeTab === 'schedule' ? 'Schedule Exam' : 'Enter Grades'}
           </button>
         </div>
       </div>
 
-      {/* Academic Level Groups */}
-      <div className="flex flex-wrap gap-3">
-         {['All Levels', 'Diploma', 'Degree', 'Masters', 'PhD'].map((level) => {
-            const activeClass = {
-               'All Levels': 'bg-gray-900 border-gray-900 text-white',
-               'Diploma': 'bg-cyan-600 border-cyan-600 text-white',
-               'Degree': 'bg-[#4B0082] border-[#4B0082] text-white',
-               'Masters': 'bg-amber-600 border-amber-600 text-white',
-               'PhD': 'bg-rose-700 border-rose-700 text-white'
-            }[level];
-            
-            const hoverClass = {
-               'All Levels': 'hover:border-gray-900 hover:text-gray-900',
-               'Diploma': 'hover:border-cyan-600 hover:text-cyan-600',
-               'Degree': 'hover:border-[#4B0082] hover:text-[#4B0082]',
-               'Masters': 'hover:border-amber-600 hover:text-amber-600',
-               'PhD': 'hover:border-rose-700 hover:text-rose-700'
-            }[level];
-
-            return (
-            <button
-              key={level}
-              onClick={() => setAcademicLevelFilter(level)}
-              className={`px-8 py-3 rounded-none text-[10px] font-black uppercase tracking-widest transition-all duration-300 border transform ${
-                academicLevelFilter === level 
-                  ? `${activeClass} shadow-xl scale-105 -translate-y-1` 
-                  : `bg-white dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-700 hover:-translate-y-1 hover:shadow-lg ${hoverClass} dark:hover:text-white`
-              }`}
-            >
-              {level}
-            </button>
-         )})}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-none border border-gray-100 dark:border-gray-700 space-y-6">
-             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Filter Registry..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-none text-xs font-bold uppercase tracking-tight outline-none focus:ring-1 focus:ring-[#4B0082]"
-                />
-             </div>
-             
-             <div className="space-y-4 pt-4">
-                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Performance Metrics</h4>
-                <div className="space-y-3">
-                   <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Institutional GPA</span>
-                      <span className="text-sm font-black text-[#4B0082] dark:text-[#FFD700]">{metrics.institutionalGpa}</span>
-                   </div>
-                   <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Completion Rate</span>
-                      <span className="text-sm font-black text-emerald-600">{metrics.completionRate}%</span>
-                   </div>
-                   <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Honors Pool</span>
-                      <span className="text-sm font-black text-blue-600">{metrics.honorsPool} Students</span>
-                   </div>
-                </div>
-             </div>
-
-             <div className="pt-6 border-t border-gray-100 dark:border-gray-700">
-                <button className="w-full py-4 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#4B0082] transition-all flex items-center justify-center gap-2 shadow-lg">
-                   <Download size={14} /> Export Global Audit
-                </button>
-                <button className="w-full mt-2 py-4 border-2 border-gray-900 text-gray-900 dark:text-white text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
-                   <Printer size={14} /> Print Master Ledger
-                </button>
-             </div>
-          </div>
-
-          <div className="bg-[#4B0082] p-8 rounded-none border-l-4 border-[#FFD700] text-white shadow-xl relative overflow-hidden">
-             <Trophy size={120} className="absolute -right-8 -bottom-8 text-white/10 rotate-12" />
-             <div className="relative z-10">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#FFD700] mb-2">Chancellor's List</h4>
-                <p className="text-xs font-medium leading-relaxed opacity-80">
-                   The next honors convocation is scheduled for July 12th. Grades must be finalized and verified by the Dean before the close of business this Friday.
-                </p>
-                <button className="mt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:underline">
-                   View Requirements <ChevronRight size={12} />
-                </button>
-             </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-3">
-          {activeTab === 'schedule' ? (
-            <div>
-              <SelectorSection />
-              <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
-                   <h3 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Calendar size={16} className="text-[#FFD700]" /> Scheduled Assessment Sessions
-                   </h3>
-                   <span className="text-[9px] font-bold text-gray-400 uppercase">Q2 Academic Cycle</span>
-                </div>
-                <div className="divide-y divide-gray-50 dark:divide-gray-700">
-                  {filteredExams.map((exam) => (
-                    <div key={exam.id} className="p-6 flex flex-wrap gap-8 items-center justify-between hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all group">
-                       <div className="flex items-center gap-6">
-                          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 border-l-4 border-[#4B0082] flex flex-col items-center justify-center shadow-inner">
-                             <span className="text-[10px] font-black text-[#4B0082] dark:text-purple-300">{exam.date.split('-')[1]}/{exam.date.split('-')[2]}</span>
-                             <span className="text-lg font-black text-gray-900 dark:text-white">JUN</span>
-                          </div>
-                          <div>
-                            <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-tight text-lg leading-none">{exam.course}</h4>
-                            <div className="flex items-center gap-3 mt-2">
-                               <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-0.5 font-bold text-gray-500 uppercase tracking-tighter border border-gray-200 dark:border-gray-600">{exam.code}</span>
-                               <span className="text-xs font-bold text-gray-400 flex items-center gap-1 uppercase tracking-widest"><MapPin size={12} /> {exam.venue}</span>
-                               <span className="text-[10px] bg-[#4B0082]/10 dark:bg-[#4B0082]/20 px-2 py-0.5 font-bold text-[#4B0082] dark:text-purple-300 uppercase tracking-tighter border border-[#4B0082]/20">{exam.level}</span>
-                            </div>
-                          </div>
-                       </div>
-                       
-                       <div className="flex items-center gap-12">
-                          <div className="text-center">
-                             <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Time Control</p>
-                             <p className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 uppercase"><Clock size={12} /> {exam.time}</p>
-                          </div>
-                          <div className="text-center w-32">
-                             <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Status</p>
-                             <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border inline-block ${
-                               exam.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                               exam.status === 'Scheduled' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                               'bg-amber-50 text-amber-700 border-amber-200'
-                             }`}>
-                                {exam.status}
-                             </span>
-                          </div>
-                          <button className="p-3 text-gray-300 hover:text-[#4B0082] transition-colors"><ChevronRight size={20}/></button>
-                       </div>
-                    </div>
-                  ))}
-                  {filteredExams.length === 0 && (
-                    <div className="p-12 text-center text-gray-400 font-bold uppercase text-xs italic tracking-widest">
-                       No Exams found for this criteria
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <SelectorSection />
-              <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
-                   <h3 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                      <GraduationCap size={16} className="text-[#FFD700]" /> Institutional Grade Review Console
-                   </h3>
-                   <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 text-[10px] font-bold">
-                         <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                         Verified
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] font-bold">
-                         <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                         Flagged
-                      </div>
-                   </div>
-                </div>
-                <div className="overflow-x-auto no-scrollbar">
-                  <table className="w-full text-left border-collapse min-w-[1000px]">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-700/30 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">
-                        <th className="px-6 py-4">Student Identity</th>
-                        <th className="px-6 py-4">Module Code</th>
-                        <th className="px-6 py-4">Level</th>
-                        <th className="px-6 py-4 text-center">Midterm (%)</th>
-                        <th className="px-6 py-4 text-center">Final (%)</th>
-                        <th className="px-6 py-4 text-center">Calculated Total (%)</th>
-                        <th className="px-6 py-4 text-center">Letter Grade</th>
-                        <th className="px-6 py-4 text-center">Status</th>
-                        <th className="px-6 py-4 text-right">Commit</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                      {filteredGrades.map((grade) => (
-                        <tr key={grade.id} className="hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all group">
-                          <td className="px-6 py-5">
-                            <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">{grade.student}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">{grade.studentId}</p>
-                          </td>
-                          <td className="px-6 py-5">
-                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-[#4B0082] dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 border border-purple-100 dark:border-purple-800 uppercase tracking-tighter">
-                                  {grade.course.split(' ').map(w => w[0]).join('')}
-                                </span>
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate max-w-[120px]">{grade.course}</span>
-                             </div>
-                          </td>
-                          <td className="px-6 py-5">
-                             <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest border border-gray-200 px-2 py-0.5">{grade.level}</span>
-                          </td>
-                          <td className="px-6 py-5 text-center text-xs font-bold text-gray-700 dark:text-gray-300">{grade.midterm}</td>
-                          <td className="px-6 py-5 text-center text-xs font-bold text-gray-700 dark:text-gray-300">{grade.final}</td>
-                          <td className="px-6 py-5 text-center text-sm font-black text-gray-900 dark:text-white">{grade.total}%</td>
-                          <td className="px-6 py-5 text-center">
-                             <span className={`text-lg font-black ${grade.total >= 90 ? 'text-emerald-600' : grade.total < 60 ? 'text-red-600' : 'text-[#4B0082] dark:text-[#FFD700]'}`}>
-                                {grade.grade}
-                             </span>
-                          </td>
-                          <td className="px-6 py-5 text-center">
-                             <div className="flex justify-center">
-                                {grade.status === 'Verified' ? <ShieldCheck size={18} className="text-emerald-500" /> : grade.status === 'Flagged' ? <AlertTriangle size={18} className="text-red-500" /> : <Clock size={18} className="text-amber-500" />}
-                             </div>
-                          </td>
-                          <td className="px-6 py-5 text-right">
-                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="p-2 text-gray-400 hover:text-blue-500"><FileText size={16}/></button>
-                                <button className="p-2 text-gray-400 hover:text-emerald-500"><UserCheck size={16}/></button>
-                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredGrades.length === 0 && (
-                        <tr><td colSpan={9} className="py-24 text-center text-gray-400 font-black uppercase tracking-[0.4em] text-sm italic">No grades found in registry</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500 p-6 flex items-start gap-4 mt-6">
-                 <div className="p-2 bg-red-500 text-white shadow-lg"><ShieldCheck size={20}/></div>
-                 <div>
-                    <h5 className="text-[11px] font-black uppercase text-red-600 tracking-widest">Administrative Protocol: Grade Finalization</h5>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
-                       Once a grade is marked as "Verified," it is committed to the immutable student transcript database. 
-                       Further modifications require a formal appeal process authorized by the Faculty Board.
-                    </p>
-                 </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Grading System Section */}
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-none border border-gray-100 dark:border-gray-700">
-         <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-6">Grading System Specification</h4>
-         <div className="grid grid-cols-5 gap-2 opacity-80">
-            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>A (70-100%)</span></div>
-            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>B (60-69%)</span></div>
-            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>C (50-59%)</span></div>
-            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>D (40-49%)</span></div>
-            <div className="flex justify-between px-2 text-red-600 font-bold"><span>F ({"<"}40%)</span></div>
+      {/* Sticky Top Tab Bar */}
+      <div className="sticky top-[60px] z-30 bg-[#F8F9FA]/95 dark:bg-[#0a0015]/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center gap-3 overflow-x-auto no-scrollbar shadow-sm">
+         <div className="flex items-center gap-2 mr-4 text-gray-400">
+            <Layout size={14} />
+            <span className="text-[9px] font-black uppercase tracking-widest">Module View</span>
          </div>
+         <button 
+            onClick={() => setActiveTab('schedule')}
+            className={`px-6 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'schedule' 
+                ? 'bg-[#4B0082] text-white shadow-lg shadow-purple-500/20 scale-105 border border-purple-500/50' 
+                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#4B0082]'
+            }`}
+          >
+            <Calendar size={12} className={activeTab === 'schedule' ? 'text-[#FFD700]' : 'text-gray-400'} /> Exam Schedule
+          </button>
+          <button 
+            onClick={() => setActiveTab('grading')}
+            className={`px-6 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'grading' 
+                ? 'bg-[#4B0082] text-white shadow-lg shadow-purple-500/20 scale-105 border border-purple-500/50' 
+                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#4B0082]'
+            }`}
+          >
+            <ClipboardList size={12} className={activeTab === 'grading' ? 'text-[#FFD700]' : 'text-gray-400'} /> Grade Review
+          </button>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        
+        {/* Academic Level Groups */}
+        <div className="flex flex-wrap gap-3">
+           {['All Levels', 'Diploma', 'Degree', 'Masters', 'PhD'].map((level) => {
+              const activeClass = {
+                 'All Levels': 'bg-gray-900 border-gray-900 text-white',
+                 'Diploma': 'bg-cyan-600 border-cyan-600 text-white',
+                 'Degree': 'bg-[#4B0082] border-[#4B0082] text-white',
+                 'Masters': 'bg-amber-600 border-amber-600 text-white',
+                 'PhD': 'bg-rose-700 border-rose-700 text-white'
+              }[level];
+              
+              const hoverClass = {
+                 'All Levels': 'hover:border-gray-900 hover:text-gray-900',
+                 'Diploma': 'hover:border-cyan-600 hover:text-cyan-600',
+                 'Degree': 'hover:border-[#4B0082] hover:text-[#4B0082]',
+                 'Masters': 'hover:border-amber-600 hover:text-amber-600',
+                 'PhD': 'hover:border-rose-700 hover:text-rose-700'
+              }[level];
+
+              return (
+              <button
+                key={level}
+                onClick={() => setAcademicLevelFilter(level)}
+                className={`px-8 py-3 rounded-none text-[10px] font-black uppercase tracking-widest transition-all duration-300 border transform ${
+                  academicLevelFilter === level 
+                    ? `${activeClass} shadow-xl scale-105 -translate-y-1` 
+                    : `bg-white dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-700 hover:-translate-y-1 hover:shadow-lg ${hoverClass} dark:hover:text-white`
+                }`}
+              >
+                {level}
+              </button>
+           )})}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          
+          <div className="lg:col-span-1 space-y-8">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-none border border-gray-100 dark:border-gray-700 space-y-6">
+               <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="Filter Registry..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-none text-xs font-bold uppercase tracking-tight outline-none focus:ring-1 focus:ring-[#4B0082]"
+                  />
+               </div>
+               
+               <div className="space-y-4 pt-4">
+                  <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Performance Metrics</h4>
+                  <div className="space-y-3">
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Institutional GPA</span>
+                        <span className="text-sm font-black text-[#4B0082] dark:text-[#FFD700]">{metrics.institutionalGpa}</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Completion Rate</span>
+                        <span className="text-sm font-black text-emerald-600">{metrics.completionRate}%</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Honors Pool</span>
+                        <span className="text-sm font-black text-blue-600">{metrics.honorsPool} Students</span>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="pt-6 border-t border-gray-100 dark:border-gray-700">
+                  <button className="w-full py-4 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#4B0082] transition-all flex items-center justify-center gap-2 shadow-lg">
+                     <Download size={14} /> Export Global Audit
+                  </button>
+                  <button className="w-full mt-2 py-4 border-2 border-gray-900 text-gray-900 dark:text-white text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
+                     <Printer size={14} /> Print Master Ledger
+                  </button>
+               </div>
+            </div>
+
+            <div className="bg-[#4B0082] p-8 rounded-none border-l-4 border-[#FFD700] text-white shadow-xl relative overflow-hidden">
+               <Trophy size={120} className="absolute -right-8 -bottom-8 text-white/10 rotate-12" />
+               <div className="relative z-10">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-[#FFD700] mb-2">Chancellor's List</h4>
+                  <p className="text-xs font-medium leading-relaxed opacity-80">
+                     The next honors convocation is scheduled for July 12th. Grades must be finalized and verified by the Dean before the close of business this Friday.
+                  </p>
+                  <button className="mt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:underline">
+                     View Requirements <ChevronRight size={12} />
+                  </button>
+               </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-3">
+            {activeTab === 'schedule' ? (
+              <div>
+                <SelectorSection />
+                <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
+                     <h3 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Calendar size={16} className="text-[#FFD700]" /> Scheduled Assessment Sessions
+                     </h3>
+                     <span className="text-[9px] font-bold text-gray-400 uppercase">Q2 Academic Cycle</span>
+                  </div>
+                  <div className="divide-y divide-gray-50 dark:divide-gray-700">
+                    {filteredExams.map((exam) => (
+                      <div key={exam.id} className="p-6 flex flex-wrap gap-8 items-center justify-between hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all group">
+                         <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 border-l-4 border-[#4B0082] flex flex-col items-center justify-center shadow-inner">
+                               <span className="text-[10px] font-black text-[#4B0082] dark:text-purple-300">{exam.date.split('-')[1]}/{exam.date.split('-')[2]}</span>
+                               <span className="text-lg font-black text-gray-900 dark:text-white">JUN</span>
+                            </div>
+                            <div>
+                              <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-tight text-lg leading-none">{exam.course}</h4>
+                              <div className="flex items-center gap-3 mt-2">
+                                 <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-0.5 font-bold text-gray-500 uppercase tracking-tighter border border-gray-200 dark:border-gray-600">{exam.code}</span>
+                                 <span className="text-xs font-bold text-gray-400 flex items-center gap-1 uppercase tracking-widest"><MapPin size={12} /> {exam.venue}</span>
+                                 <span className="text-[10px] bg-[#4B0082]/10 dark:bg-[#4B0082]/20 px-2 py-0.5 font-bold text-[#4B0082] dark:text-purple-300 uppercase tracking-tighter border border-[#4B0082]/20">{exam.level}</span>
+                              </div>
+                            </div>
+                         </div>
+                         
+                         <div className="flex items-center gap-12">
+                            <div className="text-center">
+                               <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Time Control</p>
+                               <p className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 uppercase"><Clock size={12} /> {exam.time}</p>
+                            </div>
+                            <div className="text-center w-32">
+                               <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Status</p>
+                               <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border inline-block ${
+                                 exam.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                 exam.status === 'Scheduled' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                 'bg-amber-50 text-amber-700 border-amber-200'
+                               }`}>
+                                  {exam.status}
+                               </span>
+                            </div>
+                            <button className="p-3 text-gray-300 hover:text-[#4B0082] transition-colors"><ChevronRight size={20}/></button>
+                         </div>
+                      </div>
+                    ))}
+                    {filteredExams.length === 0 && (
+                      <div className="p-12 text-center text-gray-400 font-bold uppercase text-xs italic tracking-widest">
+                         No Exams found for this criteria
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <SelectorSection />
+                <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
+                     <h3 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                        <GraduationCap size={16} className="text-[#FFD700]" /> Institutional Grade Review Console
+                     </h3>
+                     <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 text-[10px] font-bold">
+                           <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                           Verified
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold">
+                           <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                           Flagged
+                        </div>
+                     </div>
+                  </div>
+                  <div className="overflow-x-auto no-scrollbar">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-700/30 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">
+                          <th className="px-6 py-4">Student Identity</th>
+                          <th className="px-6 py-4">Module Code</th>
+                          <th className="px-6 py-4">Level</th>
+                          <th className="px-6 py-4 text-center">Midterm (%)</th>
+                          <th className="px-6 py-4 text-center">Final (%)</th>
+                          <th className="px-6 py-4 text-center">Calculated Total (%)</th>
+                          <th className="px-6 py-4 text-center">Letter Grade</th>
+                          <th className="px-6 py-4 text-center">Status</th>
+                          <th className="px-6 py-4 text-right">Commit</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                        {filteredGrades.map((grade) => (
+                          <tr key={grade.id} className="hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all group">
+                            <td className="px-6 py-5">
+                              <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">{grade.student}</p>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">{grade.studentId}</p>
+                            </td>
+                            <td className="px-6 py-5">
+                               <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-[#4B0082] dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 border border-purple-100 dark:border-purple-800 uppercase tracking-tighter">
+                                    {grade.course.split(' ').map(w => w[0]).join('')}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate max-w-[120px]">{grade.course}</span>
+                               </div>
+                            </td>
+                            <td className="px-6 py-5">
+                               <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest border border-gray-200 px-2 py-0.5">{grade.level}</span>
+                            </td>
+                            <td className="px-6 py-5 text-center text-xs font-bold text-gray-700 dark:text-gray-300">{grade.midterm}</td>
+                            <td className="px-6 py-5 text-center text-xs font-bold text-gray-700 dark:text-gray-300">{grade.final}</td>
+                            <td className="px-6 py-5 text-center text-sm font-black text-gray-900 dark:text-white">{grade.total}%</td>
+                            <td className="px-6 py-5 text-center">
+                               <span className={`text-lg font-black ${grade.total >= 90 ? 'text-emerald-600' : grade.total < 60 ? 'text-red-600' : 'text-[#4B0082] dark:text-[#FFD700]'}`}>
+                                  {grade.grade}
+                               </span>
+                            </td>
+                            <td className="px-6 py-5 text-center">
+                               <div className="flex justify-center">
+                                  {grade.status === 'Verified' ? <ShieldCheck size={18} className="text-emerald-500" /> : grade.status === 'Flagged' ? <AlertTriangle size={18} className="text-red-500" /> : <Clock size={18} className="text-amber-500" />}
+                               </div>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                               <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button className="p-2 text-gray-400 hover:text-blue-500"><FileText size={16}/></button>
+                                  <button className="p-2 text-gray-400 hover:text-emerald-500"><UserCheck size={16}/></button>
+                               </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredGrades.length === 0 && (
+                          <tr><td colSpan={9} className="py-24 text-center text-gray-400 font-black uppercase tracking-[0.4em] text-sm italic">No grades found in registry</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500 p-6 flex items-start gap-4 mt-6">
+                   <div className="p-2 bg-red-500 text-white shadow-lg"><ShieldCheck size={20}/></div>
+                   <div>
+                      <h5 className="text-[11px] font-black uppercase text-red-600 tracking-widest">Administrative Protocol: Grade Finalization</h5>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
+                         Once a grade is marked as "Verified," it is committed to the immutable student transcript database. 
+                         Further modifications require a formal appeal process authorized by the Faculty Board.
+                      </p>
+                   </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
