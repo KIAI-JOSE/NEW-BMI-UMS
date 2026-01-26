@@ -1,3 +1,4 @@
+
 import { ReactNode } from 'react';
 
 export interface Student {
@@ -88,7 +89,6 @@ export interface LibraryItem {
   description: string;
   downloadUrl: string;
   location?: string;
-  isbn?: string;
 }
 
 export interface Hostel {
@@ -125,4 +125,16 @@ export interface MedicalVisit {
     pulse: string;
   };
   notes: string;
+}
+
+export interface CertificateRecord {
+  serialNumber: string; // BMI-YYYY-NNNNN
+  studentId: string;
+  studentName: string;
+  degree: string;
+  faculty: string;
+  institution: string;
+  issueDate: string; // YYYY-MM-DD
+  contentHash: string;
+  status: 'ISSUED' | 'REVOKED';
 }

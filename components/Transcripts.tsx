@@ -457,7 +457,7 @@ export const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, log
 
                  <div className="border-b border-gray-900 py-2 text-[11px] font-black relative z-10 px-4 bg-gray-50/20">
                     <div className="flex gap-8">
-                       <span className="text-gray-600 font-sans text-[9px]">PERFORMANCE METRICS:</span>
+                       <span className="text-gray-600 font-sans text-[9px]">PERFORMANCE METRICS :></span>
                        <span>Current Avg: <span className="text-[#4B0082]">{stats.current}%</span></span>
                        <span>| Cumulative Avg: <span className="text-[#4B0082]">{stats.cumulative}%</span></span>
                     </div>
@@ -532,11 +532,10 @@ export const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, log
                  </button>
               </div>
            </div>
-           </div>
         </div>
         )}
 
-        <style>{`
+      <style>{`
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; margin: 0 !important; padding: 0 !important; visibility: hidden; }

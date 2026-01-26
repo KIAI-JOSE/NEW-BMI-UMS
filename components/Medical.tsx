@@ -480,6 +480,5 @@ export const Medical: React.FC<MedicalProps> = ({ students }) => {
          </div>
       </div>
     </div>
-  </div>
   );
 };

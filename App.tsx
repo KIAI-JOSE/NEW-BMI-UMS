@@ -9,7 +9,7 @@ import Attendance from './components/Attendance';
 import Finance from './components/Finance';
 import Courses from './components/Courses';
 import Exams from './components/Exams';
-// import { Transcripts } from './components/Transcripts';
+import { Transcripts } from './components/Transcripts';
 import Certificates from './components/Certificates';
 import { Library } from './components/Library';
 import Hostels from './components/Hostels';
@@ -22,7 +22,7 @@ import Reports from './components/Reports';
 import AIModal from './components/AIModal';
 import Settings from './components/Settings';
 import Login from './components/Login';
-import VerificationPage from './components/VerificationPage';
+import Verify from './components/Verify';
 import { Student, StaffMember, Transaction, Course, LibraryItem } from './types';
 
 const initialCourses: Course[] = [
@@ -110,19 +110,8 @@ function App() {
   const [theme, setTheme] = useState('light');
   const [logo, setLogo] = useState("https://i.ibb.co/Gv2vPdJC/BMI-PNG.png");
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-  const [showVerificationPage, setShowVerificationPage] = useState(false);
+  const [isPublicVerify, setIsPublicVerify] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Check if this is a verification URL - ORIGINAL working method
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const idParam = urlParams.get('id');
-    
-    // Handle the ORIGINAL working format: /verify?id=SERIAL&hash=HASH
-    if (window.location.pathname === '/verify' && idParam) {
-      setShowVerificationPage(true);
-    }
-  }, []);
 
   // Core Data States
   const [students, setStudents] = useState<Student[]>(() => {
@@ -149,6 +138,17 @@ function App() {
     const saved = localStorage.getItem('bmi_data_library');
     return saved ? JSON.parse(saved) : initialLibrary;
   });
+
+  // Handle URL parameters for Public Verification on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    const idParam = params.get('id');
+    
+    if (viewParam === 'verify' || idParam) {
+      setIsPublicVerify(true);
+    }
+  }, []);
 
   // Persist Data
   useEffect(() => { localStorage.setItem('bmi_data_students', JSON.stringify(students)); }, [students]);
@@ -191,9 +191,9 @@ function App() {
     setTransactions(prev => [newTx, ...prev]);
   };
 
-  // Handle verification page (public access) - ONLY method
-  if (showVerificationPage) {
-    return <VerificationPage logo={logo} />;
+  // Render Public Verification Portal if triggered by URL
+  if (isPublicVerify) {
+    return <Verify students={students} />;
   }
 
   if (!isLoggedIn) {
@@ -209,9 +209,8 @@ function App() {
       case 'finance': return <Finance theme={theme} students={students} staff={staff} transactions={transactions} setTransactions={setTransactions} totalRevenue={stats.tuition} />;
       case 'courses': return <Courses theme={theme} courses={courses} setCourses={setCourses} />;
       case 'exams': return <Exams />;
-      case 'transcripts': return <div className="p-8 text-center"><h2 className="text-2xl font-bold">Transcripts Module</h2><p>Temporarily disabled for deployment</p></div>;
+      case 'transcripts': return <Transcripts students={students} courses={courses} logo={logo} />;
       case 'certificates': return <Certificates students={students} logo={logo} />;
-      case 'verify': return <VerificationPage logo={logo} />;
       case 'library': return <Library library={library} setLibrary={setLibrary} courses={courses} />;
       case 'hostels': return <Hostels students={students} />;
       case 'medical': return <Medical students={students} />;

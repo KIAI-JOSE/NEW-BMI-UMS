@@ -13,9 +13,12 @@ import {
   Lock, 
   Layout,
   QrCode,
-  Scroll
+  Scroll,
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
-import { Student } from '../types';
+import { Student, CertificateRecord } from '../types';
+import { issueCertificate, getCertificate, revokeCertificate } from '../services/certificateService';
 
 interface CertificatesProps {
   students: Student[];
@@ -25,9 +28,15 @@ interface CertificatesProps {
 const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [activeRecord, setActiveRecord] = useState<CertificateRecord | null>(null);
   const [showCertificate, setShowCertificate] = useState(false);
   const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape');
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // OFFICIAL PRODUCTION DOMAIN
+  // This ensures certificates printed from localhost or preview sites 
+  // still point to the live public verification portal.
+  const PRODUCTION_DOMAIN = 'https://bmi-university-management.web.app';
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
@@ -37,25 +46,50 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
     });
   }, [students, searchTerm]);
 
-  // ... (keeping internal logic functions like handlePrint, handleDownloadPdf, getDegreeTitle etc. - same as before)
-  const handlePrint = async () => {
+  // Update active record when student changes
+  useMemo(() => {
+    if (selectedStudent) {
+      const record = getCertificate(selectedStudent.id);
+      setActiveRecord(record || null);
+    }
+  }, [selectedStudent, showCertificate]); // Dependency on showCertificate ensures refresh after issuing
+
+  const handleIssue = async () => {
     if (!selectedStudent) return;
+    setIsProcessing(true);
+    // Simulate network delay for "Minting" effect
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const record = issueCertificate(selectedStudent);
+    setActiveRecord(record);
+    setIsProcessing(false);
+  };
+
+  const handleRevoke = () => {
+    if (!activeRecord) return;
+    if (window.confirm("CRITICAL ACTION: Are you sure you want to REVOKE this certificate? This action will be logged in the permanent audit trail.")) {
+        revokeCertificate(activeRecord.serialNumber);
+        setActiveRecord(prev => prev ? { ...prev, status: 'REVOKED' } : null);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!activeRecord) return;
     const element = document.getElementById('official-certificate-root');
     if (!element) return;
     
     const originalTitle = document.title;
-    document.title = `CERTIFICATE_${selectedStudent.id}_${selectedStudent.lastName}`.toUpperCase();
+    document.title = `CERTIFICATE_${activeRecord.serialNumber}`.toUpperCase();
     window.print();
     setTimeout(() => { document.title = originalTitle; }, 1000);
   };
 
   const handleDownloadPdf = async () => {
-    if (!selectedStudent) return;
+    if (!activeRecord) return;
     const element = document.getElementById('official-certificate-root');
     if (!element) return;
 
-    setIsDownloading(true);
-    const fileName = `CERTIFICATE_${selectedStudent.id}_${selectedStudent.lastName}`.toUpperCase();
+    setIsProcessing(true);
+    const fileName = `CERTIFICATE_${activeRecord.serialNumber}`.toUpperCase();
 
     try {
       const html2pdfModule = await import('https://esm.sh/html2pdf.js@0.10.1?bundle');
@@ -74,41 +108,12 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
       console.error("PDF download failed", err);
       alert("PDF generation failed. Please try printing to PDF instead.");
     } finally {
-      setIsDownloading(false);
+      setIsProcessing(false);
     }
   };
 
-  const getDegreeTitle = (student: Student) => {
-    if (student.academicLevel === 'PhD') return `DOCTOR OF PHILOSOPHY IN ${student.faculty.toUpperCase()}`;
-    if (student.academicLevel === 'Masters') return `MASTER OF ARTS IN ${student.faculty.toUpperCase()}`;
-    if (student.academicLevel === 'Degree') return `BACHELOR OF ${student.faculty.toUpperCase()}`;
-    if (student.academicLevel === 'Diploma') return `DIPLOMA IN ${student.faculty.toUpperCase()}`;
-    return `CERTIFICATE IN ${student.faculty.toUpperCase()}`;
-  };
-
-  const getGraduationClass = (student: Student) => {
-    const { gpa, academicLevel } = student;
-    if (academicLevel === 'PhD') return ''; 
-    if (academicLevel === 'Degree') {
-      if (gpa >= 3.6) return 'First Class Honours';
-      if (gpa >= 3.0) return 'Second Class Honours (Upper Division)';
-      if (gpa >= 2.5) return 'Second Class Honours (Lower Division)';
-      return 'Pass';
-    }
-    if (academicLevel === 'Diploma') {
-      if (gpa >= 3.5) return 'Distinction';
-      if (gpa >= 2.5) return 'Credit';
-      return 'Pass';
-    }
-    if (academicLevel === 'Masters') {
-       if (gpa >= 3.7) return 'Distinction';
-       return '';
-    }
-    return '';
-  };
-
-  const getOrdinalDate = () => {
-    const d = new Date();
+  const getOrdinalDate = (dateString: string) => {
+    const d = new Date(dateString);
     const day = d.getDate();
     const suffix = ["th", "st", "nd", "rd"];
     const v = day % 100;
@@ -116,21 +121,11 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
     return `${ord} day of ${d.toLocaleString('default', { month: 'long' })}, ${d.getFullYear()}`;
   };
 
-  const generateSerialNumber = (student: Student) => {
-    const year = new Date().getFullYear();
-    const num = student.id.replace(/\D/g, '').padEnd(6, '0').slice(0, 6);
-    return `BMI-${year}-${num}`;
-  };
-
-  const generateCertificateHash = (student: Student, serial: string) => {
-    const raw = `${student.id}|${student.firstName}|${student.lastName}|${serial}|BMI-KEY`;
-    let hash = 0;
-    for (let i = 0; i < raw.length; i++) {
-      const char = raw.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash |= 0; 
-    }
-    return Math.abs(hash).toString(16).padStart(64, '0').substring(0, 32).toUpperCase();
+  // Secure URL Generation - FIXED FOR PRODUCTION
+  const getVerificationUrl = (record: CertificateRecord) => {
+     // We construct the URL manually to ensure it points to the LIVE site, 
+     // not the temporary preview URL.
+     return `${PRODUCTION_DOMAIN}/?id=${record.serialNumber}&hash=${record.contentHash}`;
   };
 
   const GuillochePattern = () => (
@@ -171,7 +166,7 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
         </div>
       </div>
 
-      {/* Sticky Top Tab Bar - For future expansion or filtering modes */}
+      {/* Sticky Top Tab Bar */}
       <div className="sticky top-[60px] z-30 bg-[#F8F9FA]/95 dark:bg-[#0a0015]/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center gap-3 overflow-x-auto no-scrollbar shadow-sm">
          <div className="flex items-center gap-2 mr-4 text-gray-400">
             <Layout size={14} />
@@ -215,19 +210,25 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                 />
              </div>
              <div className="flex-1 overflow-y-auto no-scrollbar space-y-1">
-                {filteredStudents.map(student => (
-                  <button 
-                    key={student.id}
-                    onClick={() => { setSelectedStudent(student); setShowCertificate(false); }}
-                    className={`w-full text-left p-3 rounded-none transition-all flex items-center justify-between group ${selectedStudent?.id === student.id ? 'bg-[#4B0082] text-white shadow-lg' : 'hover:bg-purple-50 dark:hover:bg-gray-700'}`}
-                  >
-                     <div>
-                        <p className="text-[11px] font-black uppercase tracking-tight leading-none">{student.firstName} {student.lastName}</p>
-                        <p className={`text-[9px] font-bold uppercase mt-1 ${selectedStudent?.id === student.id ? 'text-purple-200' : 'text-gray-400'}`}>{student.id}</p>
-                     </div>
-                     <ChevronRight size={14} className={selectedStudent?.id === student.id ? 'text-[#FFD700]' : 'text-gray-300'} />
-                  </button>
-                ))}
+                {filteredStudents.map(student => {
+                  const hasCert = getCertificate(student.id)?.status === 'ISSUED';
+                  return (
+                    <button 
+                      key={student.id}
+                      onClick={() => { setSelectedStudent(student); setShowCertificate(false); }}
+                      className={`w-full text-left p-3 rounded-none transition-all flex items-center justify-between group ${selectedStudent?.id === student.id ? 'bg-[#4B0082] text-white shadow-lg' : 'hover:bg-purple-50 dark:hover:bg-gray-700'}`}
+                    >
+                       <div>
+                          <p className="text-[11px] font-black uppercase tracking-tight leading-none flex items-center gap-2">
+                             {student.firstName} {student.lastName}
+                             {hasCert && <CheckCircle2 size={12} className={selectedStudent?.id === student.id ? "text-[#FFD700]" : "text-emerald-500"} />}
+                          </p>
+                          <p className={`text-[9px] font-bold uppercase mt-1 ${selectedStudent?.id === student.id ? 'text-purple-200' : 'text-gray-400'}`}>{student.id}</p>
+                       </div>
+                       <ChevronRight size={14} className={selectedStudent?.id === student.id ? 'text-[#FFD700]' : 'text-gray-300'} />
+                    </button>
+                  );
+                })}
              </div>
           </div>
 
@@ -235,24 +236,60 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
              {selectedStudent ? (
                <div className="space-y-6 animate-slide-up">
                   <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 p-8 flex justify-between items-center relative overflow-hidden">
-                     <div className="absolute top-0 left-0 w-2 h-full bg-[#4B0082]"></div>
+                     <div className={`absolute top-0 left-0 w-2 h-full ${activeRecord?.status === 'ISSUED' ? 'bg-emerald-500' : activeRecord?.status === 'REVOKED' ? 'bg-red-500' : 'bg-gray-300'}`}></div>
                      <div>
                         <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{selectedStudent.firstName} {selectedStudent.lastName}</h3>
-                        <p className="text-xs font-bold text-[#4B0082] dark:text-[#FFD700] uppercase tracking-widest mt-2">{getDegreeTitle(selectedStudent)}</p>
+                        <div className="flex items-center gap-3 mt-2">
+                           <span className="text-xs font-bold text-[#4B0082] dark:text-[#FFD700] uppercase tracking-widest">{selectedStudent.academicLevel}</span>
+                           {activeRecord?.status === 'ISSUED' && (
+                              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                                 <CheckCircle2 size={10} /> Certified
+                              </span>
+                           )}
+                           {activeRecord?.status === 'REVOKED' && (
+                              <span className="bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                                 <ShieldAlert size={10} /> Revoked
+                              </span>
+                           )}
+                        </div>
                      </div>
-                     <button 
-                       onClick={() => setShowCertificate(true)}
-                       className="px-10 py-4 bg-[#4B0082] text-white rounded-none font-black text-xs uppercase tracking-widest shadow-xl hover:bg-black transition-all flex items-center gap-3 border border-[#FFD700]/30"
-                     >
-                        <Award size={18} className="text-[#FFD700]" /> Preview Certificate
-                     </button>
+                     
+                     <div className="flex gap-3">
+                        {activeRecord?.status === 'ISSUED' ? (
+                           <>
+                              <button 
+                                 onClick={handleRevoke}
+                                 className="px-6 py-3 border border-red-200 text-red-600 rounded-none font-black text-xs uppercase tracking-widest hover:bg-red-50 transition-all flex items-center gap-2"
+                              >
+                                 <ShieldAlert size={14} /> Revoke
+                              </button>
+                              <button 
+                                 onClick={() => setShowCertificate(true)}
+                                 className="px-8 py-3 bg-[#FFD700] text-[#4B0082] rounded-none font-black text-xs uppercase tracking-widest shadow-xl hover:bg-white transition-all flex items-center gap-2"
+                              >
+                                 <Award size={16} /> View Certificate
+                              </button>
+                           </>
+                        ) : (
+                           <button 
+                              onClick={handleIssue}
+                              disabled={isProcessing}
+                              className="px-10 py-4 bg-[#4B0082] text-white rounded-none font-black text-xs uppercase tracking-widest shadow-xl hover:bg-black transition-all flex items-center gap-3 border border-[#FFD700]/30 disabled:opacity-50"
+                           >
+                              {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Award size={18} className="text-[#FFD700]" />}
+                              {activeRecord?.status === 'REVOKED' ? 'Re-Issue Certificate' : 'Authorize & Issue'}
+                           </button>
+                        )}
+                     </div>
                   </div>
 
-                  <div className="bg-gray-100 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
+                  <div className="bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
                      <ShieldCheck size={64} className="text-gray-300 mb-6" />
-                     <h4 className="text-lg font-black text-gray-400 uppercase tracking-widest mb-2">Secure Verification</h4>
+                     <h4 className="text-lg font-black text-gray-400 uppercase tracking-widest mb-2">Secure Verification Registry</h4>
                      <p className="text-xs text-gray-500 max-w-md">
-                        Certificate generation is restricted to authorized registrars. All documents are digitally watermarked, hashed, and logged in the institutional blockchain ledger.
+                        {activeRecord 
+                           ? `Certificate Serial: ${activeRecord.serialNumber} | Hash: ${activeRecord.contentHash.substring(0, 16)}...`
+                           : "Certificate generation is restricted to authorized registrars. Issuing creates an immutable record."}
                      </p>
                   </div>
                </div>
@@ -265,13 +302,8 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
           </div>
         </div>
 
-      {showCertificate && selectedStudent && (() => {
-        const serialNumber = generateSerialNumber(selectedStudent);
-        const docHash = generateCertificateHash(selectedStudent, serialNumber);
-        
-        // Dynamic Verification URL using configurable base URL
-        const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
-        const verifyUrl = `${baseUrl}/verify?id=${serialNumber}&hash=${docHash}`;
+      {showCertificate && activeRecord && (() => {
+        const verifyUrl = getVerificationUrl(activeRecord);
 
         return (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4 overflow-y-auto">
@@ -294,8 +326,8 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
 
                  <div className="relative z-10 text-center w-full h-full flex flex-col">
                     <div className="absolute top-0 right-0 text-right">
-                       <p className="text-[10px] font-mono font-bold text-gray-400">SERIAL: <span className="text-red-700">{serialNumber}</span></p>
-                       <p className="text-[6px] font-mono text-gray-300 mt-0.5 max-w-[150px] break-all">{docHash}</p>
+                       <p className="text-[10px] font-mono font-bold text-gray-400">SERIAL: <span className="text-red-700">{activeRecord.serialNumber}</span></p>
+                       <p className="text-[6px] font-mono text-gray-300 mt-0.5 max-w-[150px] break-all">{activeRecord.contentHash}</p>
                     </div>
 
                     <div className="flex-1 flex flex-col items-center justify-center w-full space-y-6">
@@ -310,7 +342,7 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                         
                         <div className="py-2 border-b-2 border-gray-900 px-8 md:px-12 inline-block">
                            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wide text-gray-900 leading-tight">
-                              {selectedStudent.firstName} {selectedStudent.lastName},
+                              {activeRecord.studentName},
                            </h2>
                         </div>
 
@@ -318,20 +350,15 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
 
                         <div className="flex flex-col items-center gap-2 mt-4">
                            <h3 className="text-2xl md:text-3xl font-black uppercase tracking-widest text-[#4B0082] max-w-4xl leading-tight">
-                              {getDegreeTitle(selectedStudent)}
+                              {activeRecord.degree}
                            </h3>
-                           {getGraduationClass(selectedStudent) && getGraduationClass(selectedStudent) !== 'Pass' && (
-                              <p className="text-xl md:text-2xl font-serif font-bold text-gray-800">
-                                 with {getGraduationClass(selectedStudent)}
-                              </p>
-                           )}
                         </div>
 
                         <p className="text-base md:text-lg font-serif italic text-gray-600 max-w-3xl mt-4">
                            with all the rights, privileges, and honors thereunto appertaining.
                            <br/>
                            <span className="block mt-4">
-                             Given at Nairobi, Kenya, this {getOrdinalDate()}.
+                             Given at Nairobi, Kenya, this {getOrdinalDate(activeRecord.issueDate)}.
                            </span>
                         </p>
                     </div>
@@ -352,7 +379,7 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                                   alt="Verification QR"
                                 />
                              </div>
-                             <span className="text-[6px] font-black uppercase tracking-widest text-gray-400">VERIFY: {serialNumber}</span>
+                             <span className="text-[6px] font-black uppercase tracking-widest text-gray-400">VERIFY: {activeRecord.serialNumber}</span>
                           </div>
                           <div className="relative group flex-shrink-0 p-1">
                              <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center filter drop-shadow-md">
@@ -380,7 +407,7 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                     <ShieldCheck size={24} className="text-[#FFD700]" />
                     <div>
                        <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">Official Document Preview Mode</span>
-                       <span className="block text-[9px] text-[#FFD700] uppercase tracking-wider">SECURE SERIAL: {serialNumber}</span>
+                       <span className="block text-[9px] text-[#FFD700] uppercase tracking-wider">SECURE SERIAL: {activeRecord.serialNumber}</span>
                     </div>
                  </div>
                  <div className="flex gap-4 items-center">
@@ -392,8 +419,8 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                          <Layout size={14} /> Portrait
                        </button>
                     </div>
-                    <button onClick={handleDownloadPdf} disabled={isDownloading} className="flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                       <Download size={16} /> {isDownloading ? 'Generating...' : 'Download PDF'}
+                    <button onClick={handleDownloadPdf} disabled={isProcessing} className="flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                       <Download size={16} /> {isProcessing ? 'Generating...' : 'Download PDF'}
                     </button>
                     <button onClick={handlePrint} className="flex items-center gap-2 px-8 py-3 bg-[#4B0082] text-white text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-[#4B0082] transition-all">
                        <Printer size={16} /> Print Certificate

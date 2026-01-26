@@ -652,6 +652,5 @@ export const Library: React.FC<LibraryProps> = ({ library, setLibrary, courses }
           </div>
       )}
     </div>
-  </div>
   );
 };
