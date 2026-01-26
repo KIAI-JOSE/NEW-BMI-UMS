@@ -5,8 +5,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     
-    // For GitHub Pages deployment - use repository name as base
-    const base = mode === 'production' ? '/NEW-BMI-UMS/' : '/';
+    // For Vercel deployment - use root path
+    const base = '/';
     
     return {
       base,

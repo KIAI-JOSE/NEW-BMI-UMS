@@ -532,8 +532,8 @@ export const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, log
                  </button>
               </div>
            </div>
+           </div>
         </div>
-      </div>
         )}
 
         <style>{`
