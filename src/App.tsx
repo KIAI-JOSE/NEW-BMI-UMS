@@ -9,7 +9,7 @@ import Attendance from './components/Attendance';
 import Finance from './components/Finance';
 import Courses from './components/Courses';
 import Exams from './components/Exams';
-import { Transcripts } from './components/Transcripts';
+// import { Transcripts } from './components/Transcripts';
 import Certificates from './components/Certificates';
 import { Library } from './components/Library';
 import Hostels from './components/Hostels';
@@ -209,7 +209,7 @@ function App() {
       case 'finance': return <Finance theme={theme} students={students} staff={staff} transactions={transactions} setTransactions={setTransactions} totalRevenue={stats.tuition} />;
       case 'courses': return <Courses theme={theme} courses={courses} setCourses={setCourses} />;
       case 'exams': return <Exams />;
-      case 'transcripts': return <Transcripts students={students} courses={courses} logo={logo} />;
+      case 'transcripts': return <div className="p-8 text-center"><h2 className="text-2xl font-bold">Transcripts Module</h2><p>Temporarily disabled for deployment</p></div>;
       case 'certificates': return <Certificates students={students} logo={logo} />;
       case 'verify': return <VerificationPage logo={logo} />;
       case 'library': return <Library library={library} setLibrary={setLibrary} courses={courses} />;

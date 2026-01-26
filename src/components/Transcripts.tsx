@@ -532,10 +532,11 @@ export const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, log
                  </button>
               </div>
            </div>
+           </div>
         </div>
         )}
 
-      <style>{`
+        <style>{`
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; margin: 0 !important; padding: 0 !important; visibility: hidden; }
