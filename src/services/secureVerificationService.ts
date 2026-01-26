@@ -236,6 +236,30 @@ function initializeSecureDatabase(): void {
       issued_by: 'Office of the Registrar'
     },
     {
+      serial_number: 'BMI-2026-202310',
+      student_id: 'BMI-2025-104',
+      student_name: 'James Wilson',
+      degree_title: 'DIPLOMA IN THEOLOGY',
+      graduation_class: 'with Distinction',
+      faculty: 'Theology',
+      department: 'Department of Theology',
+      issue_date: '2026-01-26',
+      graduation_date: '2026-01-20',
+      gpa: 3.7,
+      status: 'ACTIVE',
+      content_hash: generateSecureHash({
+        serial: 'BMI-2026-202310',
+        student_id: 'BMI-2025-104',
+        student_name: 'James Wilson',
+        degree: 'DIPLOMA IN THEOLOGY',
+        issue_date: '2026-01-26'
+      }),
+      verification_count: 1,
+      created_at: '2026-01-26T08:00:00Z',
+      last_verified: '2026-01-26T08:00:00Z',
+      issued_by: 'Office of the Registrar'
+    },
+    {
       serial_number: 'BMI-2024-000099',
       student_id: 'BMI-2023-999',
       student_name: 'Test Revoked',
