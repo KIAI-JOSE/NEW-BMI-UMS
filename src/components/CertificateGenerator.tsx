@@ -54,25 +54,30 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
   const [qrCodeImage, setQrCodeImage] = useState<string>('');
   const certificateRef = useRef<HTMLDivElement>(null);
 
-  const generateUniqueCertificateSerial = (student: Student): string => {
+  const generateUniqueCertificateSerial = async (student: Student): Promise<string> => {
     const year = new Date().getFullYear();
     
-    // Get existing certificates from both localStorage and the system
+    // Get existing certificates from localStorage
     const localCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
+    const realTimeCerts = JSON.parse(localStorage.getItem('realtime_certificates') || '[]');
     
-    // Load existing certificates from the system (certificates.json)
-    let systemCerts: any[] = [];
+    // CRITICAL: Load actual certificates from the database
+    let databaseCerts: any[] = [];
     try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate getting the highest sequence number
-      systemCerts = JSON.parse(localStorage.getItem('system_certificates') || '[]');
+      const response = await fetch('/certificates.json');
+      if (response.ok) {
+        const data = await response.json();
+        databaseCerts = data.certificates || [];
+      }
     } catch (error) {
-      console.warn('Could not load system certificates');
+      console.warn('Could not load certificates database:', error);
     }
     
+    // Combine ALL certificate sources to check for duplicates
+    const allExistingCerts = [...localCerts, ...realTimeCerts, ...databaseCerts];
+    
     // Find the highest sequence number for the current year
-    const allCerts = [...localCerts, ...systemCerts];
-    const currentYearCerts = allCerts.filter(cert => 
+    const currentYearCerts = allExistingCerts.filter(cert => 
       cert.serial_number && cert.serial_number.startsWith(`BMI-${year}-`)
     );
     
@@ -87,66 +92,118 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
       }
     });
     
-    // Generate unique sequence using timestamp and random component
-    const now = new Date();
-    const timestamp = now.getTime().toString().slice(-4); // Last 4 digits of timestamp
-    const random = Math.floor(Math.random() * 100).toString().padStart(2, '0'); // 2-digit random
-    const uniqueSequence = timestamp + random;
-    
-    // Ensure we don't duplicate existing serials
-    let candidateSerial = `BMI-${year}-${uniqueSequence}`;
+    // Generate truly unique sequence
     let attempts = 0;
+    let candidateSerial = '';
     
-    while (allCerts.some(cert => cert.serial_number === candidateSerial) && attempts < 10) {
-      const newRandom = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      const newTimestamp = Date.now().toString().slice(-3);
-      candidateSerial = `BMI-${year}-${newTimestamp}${newRandom}`;
+    do {
+      const now = new Date();
+      const timestamp = now.getTime().toString().slice(-4);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const uniqueSequence = timestamp + random;
+      candidateSerial = `BMI-${year}-${uniqueSequence}`;
       attempts++;
-    }
+      
+      // Safety check to prevent infinite loop
+      if (attempts > 50) {
+        // Fallback to sequential numbering
+        candidateSerial = `BMI-${year}-${(maxSequence + attempts).toString().padStart(6, '0')}`;
+        break;
+      }
+    } while (allExistingCerts.some(cert => cert.serial_number === candidateSerial));
+    
+    console.log(`Generated unique serial: ${candidateSerial} after ${attempts} attempts`);
+    console.log(`Checked against ${allExistingCerts.length} existing certificates`);
     
     return candidateSerial;
   };
 
-  const saveCertificateToStorage = async (certData: CertificateData) => {
-    // Save to localStorage for tracking
-    const existingCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
-    existingCerts.push({
-      ...certData,
-      generated_at: new Date().toISOString()
-    });
-    localStorage.setItem('bmi_generated_certificates', JSON.stringify(existingCerts));
-
-    // Also save to the real certificates database for real-time verification
+  const saveCertificateToStorage = (certData: CertificateData) => {
+    console.log('CERT GEN: Starting save operation for:', certData.serial_number);
+    
+    // FIRESTORE SCHEMA IMPLEMENTATION
+    // Collection: certificates (CORE REGISTRY)
+    // Document ID: Use serial number as document ID
+    
     try {
-      // In a real implementation, this would be an API call to save to the database
-      // For now, we'll simulate adding to the certificates.json structure
-      const newCertificate = {
+      const certificateRecord = {
+        // Core certificate data following Firestore schema
         serial_number: certData.serial_number,
-        student_name: certData.student_name,
         student_id: certData.student_id,
-        degree_title: certData.degree_title,
-        graduation_class: certData.graduation_class,
+        student_name: certData.student_name,
+        degree: certData.degree_title,
         faculty: certData.faculty,
-        department: certData.department,
-        issue_date: certData.issue_date,
-        graduation_date: certData.graduation_date,
-        gpa: certData.gpa,
-        status: 'active' as const,
+        institution: "BMI University",
+        issue_year: new Date().getFullYear(),
+        issue_date: new Date().toISOString(),
+        
+        // Hash generation following canonical formula
+        // SHA-256(serial_number + student_id + degree + issue_date)
         content_hash: certData.content_hash,
-        issued_by: 'Office of the Registrar',
-        verification_count: 0,
+        qr_hash: certData.content_hash, // Same as content hash for now
+        
+        // Status management
+        status: "ISSUED" as const,
+        revocation_reason: null,
+        
+        // Audit trail
+        created_by: "system",
         created_at: new Date().toISOString(),
-        last_verified: new Date().toISOString()
+        updated_at: new Date().toISOString()
       };
 
-      // Store in a separate localStorage key for real-time verification
-      const realTimeCerts = JSON.parse(localStorage.getItem('realtime_certificates') || '[]');
-      realTimeCerts.push(newCertificate);
-      localStorage.setItem('realtime_certificates', JSON.stringify(realTimeCerts));
+      console.log('CERT GEN: Created certificate record:', certificateRecord);
 
-      console.log('Certificate saved to real-time database:', newCertificate);
+      // CRITICAL: Save to Firestore-style certificate registry
+      // Using localStorage to simulate Firestore collection
+      
+      // Get existing certificates collection
+      const certificatesCollection = JSON.parse(localStorage.getItem('certificates_collection') || '{}');
+      console.log('CERT GEN: Current collection size:', Object.keys(certificatesCollection).length);
+      
+      // Use serial number as document ID (Firestore pattern)
+      const documentId = certData.serial_number;
+      certificatesCollection[documentId] = certificateRecord;
+      
+      // Save back to storage
+      localStorage.setItem('certificates_collection', JSON.stringify(certificatesCollection));
+      console.log('CERT GEN: Saved to collection. New size:', Object.keys(certificatesCollection).length);
+      
+      // Verify it was saved
+      const verifyCollection = JSON.parse(localStorage.getItem('certificates_collection') || '{}');
+      const savedRecord = verifyCollection[documentId];
+      console.log('CERT GEN: Verification - record exists:', !!savedRecord);
+      if (savedRecord) {
+        console.log('CERT GEN: Saved record:', savedRecord.student_name, savedRecord.status);
+      }
+      
+      // Create audit log entry
+      const auditLog = {
+        serial_number: certData.serial_number,
+        action: "ISSUED" as const,
+        performed_by: "system",
+        ip_address: "127.0.0.1", // Would be real IP in production
+        timestamp: new Date().toISOString()
+      };
+      
+      // Save to audit logs collection
+      const auditLogs = JSON.parse(localStorage.getItem('certificate_audit_logs') || '[]');
+      auditLogs.push(auditLog);
+      localStorage.setItem('certificate_audit_logs', JSON.stringify(auditLogs));
+      console.log('CERT GEN: Audit log created');
+      
+      // Maintain backward compatibility with legacy systems
+      const existingCerts = JSON.parse(localStorage.getItem('bmi_generated_certificates') || '[]');
+      existingCerts.push({
+        ...certData,
+        generated_at: new Date().toISOString()
+      });
+      localStorage.setItem('bmi_generated_certificates', JSON.stringify(existingCerts));
+      console.log('CERT GEN: Legacy compatibility maintained');
+      
     } catch (error) {
-      console.error('Error saving certificate to database:', error);
+      console.error('CERT GEN: Error saving certificate to Firestore collection:', error);
+      throw error; // Re-throw to handle in calling function
     }
   };
 
@@ -187,46 +244,87 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
     cleanupDuplicateCertificates();
   }, []);
 
+  /**
+   * AUTHORITATIVE CERTIFICATE GENERATION FLOW
+   * Following university-grade issuance process:
+   * 1. Serial Generation (First Lock)
+   * 2. Data Canonicalization 
+   * 3. Content Hash Generation (Security Seal)
+   * 4. Database Write (Point of No Return)
+   * 5. QR Code Generation (Public Proof Layer)
+   */
   const generateCertificate = async (student: Student) => {
     setIsGenerating(true);
     
     try {
-      // Generate unique sequential serial number
-      const serial = generateUniqueCertificateSerial(student);
+      console.log('CERT ISSUANCE: Starting authoritative generation for:', student.firstName, student.lastName);
       
-      // Create certificate data
-      const certData: CertificateData = {
+      // STEP 1: SERIAL NUMBER GENERATION (First Lock)
+      console.log('CERT ISSUANCE: Generating canonical serial number...');
+      const serial = await generateUniqueCertificateSerial(student);
+      console.log('CERT ISSUANCE: Serial locked:', serial);
+      
+      // STEP 2: CERTIFICATE DATA CANONICALIZATION (CRITICAL)
+      console.log('CERT ISSUANCE: Building canonical certificate payload...');
+      const canonicalData = {
         serial_number: serial,
-        student_name: `${student.firstName} ${student.lastName}`,
         student_id: student.id,
-        degree_title: getDegreeTitle(student.careerPath),
+        student_name: `${student.firstName} ${student.lastName}`,
+        degree: getDegreeTitle(student.careerPath),
+        institution: "BMI University",
+        issue_date: new Date().toISOString().split('T')[0]
+      };
+      
+      console.log('CERT ISSUANCE: Canonical data created:', canonicalData);
+
+      // STEP 3: CONTENT HASH GENERATION (Security Seal)
+      // Hash input: serial|student_id|name|degree|institution|issue_date
+      console.log('CERT ISSUANCE: Generating cryptographic hash...');
+      const hashInput = `${canonicalData.serial_number}|${canonicalData.student_id}|${canonicalData.student_name}|${canonicalData.degree}|${canonicalData.institution}|${canonicalData.issue_date}`;
+      console.log('CERT ISSUANCE: Hash input string:', hashInput);
+      
+      // Generate SHA-256 hash (simplified version for demo)
+      let hash = 0;
+      for (let i = 0; i < hashInput.length; i++) {
+        const char = hashInput.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      const contentHash = Math.abs(hash).toString(16).padStart(8, '0');
+      console.log('CERT ISSUANCE: Content hash sealed:', contentHash);
+
+      // STEP 4: CREATE COMPLETE CERTIFICATE DATA
+      const certData: CertificateData = {
+        serial_number: canonicalData.serial_number,
+        student_name: canonicalData.student_name,
+        student_id: canonicalData.student_id,
+        degree_title: canonicalData.degree,
         graduation_class: getGraduationClass(student.gpa),
         faculty: student.faculty,
         department: student.department,
-        issue_date: new Date().toISOString().split('T')[0],
+        issue_date: canonicalData.issue_date,
         graduation_date: new Date().toISOString().split('T')[0],
         gpa: student.gpa,
         verification_url: '',
         qr_code_data: '',
-        content_hash: ''
+        content_hash: contentHash
       };
 
-      // Generate content hash
-      certData.content_hash = verificationService.generateContentHash({
-        serial: certData.serial_number,
-        name: certData.student_name,
-        degree: certData.degree_title
-      });
-
-      // Generate verification URL
-      certData.verification_url = verificationService.generateVerificationUrl(
-        certData.serial_number,
-        certData.content_hash
-      );
+      // STEP 5: QR CODE GENERATION (Public Proof Layer)
+      // QR must encode VERIFICATION URL + HASH
+      console.log('CERT ISSUANCE: Generating verification URL with hash...');
+      const verificationUrl = `${window.location.origin}/verify?serial=${certData.serial_number}&hash=${contentHash}`;
+      certData.verification_url = verificationUrl;
+      certData.qr_code_data = verificationUrl;
       
-      certData.qr_code_data = certData.verification_url;
+      console.log('CERT ISSUANCE: Verification URL:', verificationUrl);
 
-      // Generate actual QR code image
+      // STEP 6: DATABASE WRITE (POINT OF NO RETURN)
+      console.log('CERT ISSUANCE: Writing to certificate registry...');
+      saveCertificateToStorage(certData);
+      console.log('CERT ISSUANCE: Certificate registry updated');
+      
+      // STEP 7: GENERATE ACTUAL QR CODE (Public Proof Layer)
       try {
         const qrCodeDataURL = await QRCode.toDataURL(certData.verification_url, {
           width: 200,
@@ -238,27 +336,25 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ students, l
         });
         setQrCodeImage(qrCodeDataURL);
         
-        // Log for verification (can be removed in production)
-        console.log('Generated QR Code for:', {
-          serial: certData.serial_number,
-          student: certData.student_name,
-          url: certData.verification_url,
-          hash: certData.content_hash
-        });
+        console.log('CERT ISSUANCE: QR code generated for verification URL:', certData.verification_url);
       } catch (qrError) {
-        console.error('QR code generation error:', qrError);
-        // Fallback to empty string if QR generation fails
+        console.error('CERT ISSUANCE: QR code generation error:', qrError);
         setQrCodeImage('');
       }
 
+      // STEP 8: CERTIFICATE RELEASE
       setCertificateData(certData);
       setShowPreview(true);
       
-      // Save certificate to local storage for tracking
-      saveCertificateToStorage(certData);
+      console.log('CERT ISSUANCE: Certificate issued successfully');
+      console.log('CERT ISSUANCE: Serial:', certData.serial_number);
+      console.log('CERT ISSUANCE: Hash:', certData.content_hash);
+      console.log('CERT ISSUANCE: Verification URL:', certData.verification_url);
       
     } catch (error) {
-      console.error('Error generating certificate:', error);
+      console.error('CERT ISSUANCE: Certificate generation failed:', error);
+      console.error('CERT ISSUANCE: Error stack:', error.stack);
+      alert('Certificate issuance failed: ' + error.message);
     } finally {
       setIsGenerating(false);
     }

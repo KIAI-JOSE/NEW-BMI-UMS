@@ -16,6 +16,7 @@ import {
   Scroll
 } from 'lucide-react';
 import { Student } from '../types';
+import { generateSecureHash, generateVerificationUrl } from '../services/secureVerificationService';
 
 interface CertificatesProps {
   students: Student[];
@@ -122,15 +123,15 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
     return `BMI-${year}-${num}`;
   };
 
-  const generateCertificateHash = (student: Student, serial: string) => {
-    const raw = `${student.id}|${student.firstName}|${student.lastName}|${serial}|BMI-KEY`;
-    let hash = 0;
-    for (let i = 0; i < raw.length; i++) {
-      const char = raw.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash |= 0; 
-    }
-    return Math.abs(hash).toString(16).padStart(64, '0').substring(0, 32).toUpperCase();
+  const generateCertificateHash = (student: Student, serial: string): string => {
+    // Use secure SHA-256 hashing with proper salting
+    return generateSecureHash({
+      serial: serial,
+      student_id: student.id,
+      student_name: `${student.firstName} ${student.lastName}`,
+      degree: getDegreeTitle(student),
+      issue_date: new Date().toISOString().split('T')[0]
+    });
   };
 
   const GuillochePattern = () => (
@@ -269,9 +270,8 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
         const serialNumber = generateSerialNumber(selectedStudent);
         const docHash = generateCertificateHash(selectedStudent, serialNumber);
         
-        // Dynamic Verification URL using configurable base URL
-        const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
-        const verifyUrl = `${baseUrl}/verify?id=${serialNumber}&hash=${docHash}`;
+        // Dynamic Verification URL using secure service
+        const verifyUrl = generateVerificationUrl(serialNumber, docHash);
 
         return (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4 overflow-y-auto">

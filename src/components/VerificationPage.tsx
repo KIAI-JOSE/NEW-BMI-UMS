@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import EnhancedQRScanner from './EnhancedQRScanner';
 import { verificationService } from '../services/verificationService';
+import { verifyCertificateSecure, verifyQRCodeSecure, generateVerificationUrl, getRateLimitStatus } from '../services/secureVerificationService';
 
 interface CertificateData {
   valid: boolean;
@@ -51,6 +52,7 @@ interface CertificateData {
   };
   error?: string;
   code?: string;
+  rate_limited?: boolean;
 }
 
 interface VerificationPageProps {
@@ -66,6 +68,8 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
   const [verificationResult, setVerificationResult] = useState<CertificateData | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [rateLimitStatus, setRateLimitStatus] = useState({ allowed: true, remaining: 10, resetTime: 0 });
+  const [clientIp] = useState(() => '127.0.0.1'); // In production, get from server
 
   // Monitor online/offline status
   useEffect(() => {
@@ -80,6 +84,18 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Update rate limit status periodically
+  useEffect(() => {
+    const updateRateLimit = () => {
+      setRateLimitStatus(getRateLimitStatus(clientIp));
+    };
+
+    updateRateLimit();
+    const interval = setInterval(updateRateLimit, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [clientIp]);
 
   // Parse URL parameters for direct verification links
   useEffect(() => {
@@ -181,36 +197,29 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
     setVerificationResult(null);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Validate serial number format
-      if (!serialNumber.match(/^BMI-\d{4}-\d{6}$/)) {
+      // Check rate limit first
+      const rateLimit = getRateLimitStatus(clientIp);
+      if (!rateLimit.allowed) {
         setVerificationResult({
           valid: false,
-          error: 'Invalid certificate serial number format',
-          code: 'INVALID_FORMAT'
+          error: `Rate limit exceeded. Try again in ${Math.ceil((rateLimit.resetTime - Date.now()) / 1000)} seconds.`,
+          code: 'RATE_LIMITED',
+          rate_limited: true
         });
         return;
       }
 
-      if (verificationMode === 'online' && !isOnline) {
-        setVerificationResult({
-          valid: false,
-          error: 'Online verification requires internet connection',
-          code: 'NO_CONNECTION'
-        });
-        return;
-      }
-
-      // Use the actual verification service instead of mock data
-      const result = await verificationService.verifyCertificate({
+      // Use secure verification service
+      const result = verifyCertificateSecure({
         serial: serialNumber,
         hash: hashValue || undefined,
-        method: verificationMode as 'online' | 'offline'
+        method: verificationMode as 'online' | 'offline',
+        client_ip: clientIp,
+        user_agent: navigator.userAgent
       });
       
       setVerificationResult(result);
+      setRateLimitStatus(getRateLimitStatus(clientIp));
 
     } catch (error) {
       setVerificationResult({
@@ -225,11 +234,8 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
 
   const handleQRScan = async (qrContent: string) => {
     try {
-      // Use the verification service to handle QR verification
-      const result = await verificationService.verifyQRCode({
-        qr_data: qrContent,
-        method: 'qr_scan'
-      });
+      // Use secure QR verification service
+      const result = verifyQRCodeSecure(qrContent, clientIp, navigator.userAgent);
       
       if (result.valid && result.certificate) {
         setSerialNumber(result.certificate.serial_number);
@@ -240,6 +246,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
       }
       
       setShowQRScanner(false);
+      setRateLimitStatus(getRateLimitStatus(clientIp));
     } catch (error) {
       setVerificationResult({
         valid: false,
@@ -399,10 +406,25 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ logo }) => {
                 )}
               </div>
 
+              {/* Rate Limit Status */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Rate Limit Status:</span>
+                  <span className={`font-medium ${rateLimitStatus.allowed ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {rateLimitStatus.allowed ? `${rateLimitStatus.remaining} attempts left` : 'Rate limited'}
+                  </span>
+                </div>
+                {!rateLimitStatus.allowed && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Reset in {Math.ceil((rateLimitStatus.resetTime - Date.now()) / 1000)} seconds
+                  </p>
+                )}
+              </div>
+
               {/* Verify Button */}
               <button
                 onClick={handleVerification}
-                disabled={isVerifying || !serialNumber.trim()}
+                disabled={isVerifying || !serialNumber.trim() || !rateLimitStatus.allowed}
                 className="w-full py-4 bg-[#4B0082] text-white rounded-xl font-bold text-lg hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
               >
                 {isVerifying ? (
