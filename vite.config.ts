@@ -5,15 +5,14 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     
-    // For GitHub Pages deployment
-    const base = mode === 'production' ? '/NEW-BMI-UMS/' : '/';
+    // For Vercel deployment - use root path
+    const base = '/';
     
     return {
       base,
       server: {
         port: 3000,
-        host: '0.0.0.0', // This allows access from any IP
-        // This is the key fix - serve index.html for all routes
+        host: '0.0.0.0',
         historyApiFallback: true
       },
       plugins: [react()],

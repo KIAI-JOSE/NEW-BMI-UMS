@@ -9,11 +9,11 @@ import Attendance from './components/Attendance';
 import Finance from './components/Finance';
 import Courses from './components/Courses';
 import Exams from './components/Exams';
-import Transcripts from './components/Transcripts';
+// import { Transcripts } from './components/Transcripts';
 import Certificates from './components/Certificates';
-import Library from './components/Library';
+import { Library } from './components/Library';
 import Hostels from './components/Hostels';
-import Medical from './components/Medical';
+import { Medical } from './components/Medical';
 import Inventory from './components/Inventory';
 import Alumni from './components/Alumni';
 import Communications from './components/Communications';
@@ -209,7 +209,7 @@ function App() {
       case 'finance': return <Finance theme={theme} students={students} staff={staff} transactions={transactions} setTransactions={setTransactions} totalRevenue={stats.tuition} />;
       case 'courses': return <Courses theme={theme} courses={courses} setCourses={setCourses} />;
       case 'exams': return <Exams />;
-      case 'transcripts': return <Transcripts students={students} courses={courses} logo={logo} />;
+      case 'transcripts': return <div className="p-8 text-center"><h2 className="text-2xl font-bold">Transcripts Module</h2><p>Temporarily disabled for deployment</p></div>;
       case 'certificates': return <Certificates students={students} logo={logo} />;
       case 'verify': return <VerificationPage logo={logo} />;
       case 'library': return <Library library={library} setLibrary={setLibrary} courses={courses} />;
@@ -230,15 +230,15 @@ function App() {
   };
 
   return (
-    <div className="flex bg-[#F8F9FA] dark:bg-[#0a0015] min-h-screen font-sans transition-colors duration-300 relative">
+    <div className="flex bg-[#F8F9FA] dark:bg-[#0a0015] h-screen font-sans transition-colors duration-300 relative overflow-hidden">
       
-      {/* Drawer Trigger Button */}
+      {/* Drawer Trigger Button - Updated position for small headers */}
       <button 
         onClick={() => setIsSidebarOpen(true)}
-        className={`fixed top-6 left-6 z-40 p-3 bg-[#4B0082] text-white rounded-full shadow-lg hover:scale-110 transition-all border-2 border-[#FFD700] ${isSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className={`fixed top-3 left-4 z-50 p-2 bg-[#4B0082] text-white rounded-full shadow-lg hover:scale-110 transition-all border-2 border-[#FFD700] ${isSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         aria-label="Open Menu"
       >
-        <Menu size={24} />
+        <Menu size={20} />
       </button>
 
       <Sidebar 
@@ -254,8 +254,8 @@ function App() {
       />
       
       {/* Main Content Area */}
-      <div className="flex-1 w-full overflow-x-hidden p-4 md:p-6 lg:p-8 pt-20 md:pt-8">
-        <main className="min-h-[calc(100vh-2rem)] rounded-3xl bg-white/50 dark:bg-black/10 border border-white/20 dark:border-gray-800 shadow-sm relative backdrop-blur-sm overflow-hidden">
+      <div className="flex-1 w-full p-2 md:p-4 lg:p-6 h-full overflow-hidden box-border">
+        <main className="h-full rounded-3xl bg-white/50 dark:bg-black/10 border border-white/20 dark:border-gray-800 shadow-sm relative backdrop-blur-sm overflow-y-auto no-scrollbar flex flex-col">
            {renderContent()}
         </main>
       </div>

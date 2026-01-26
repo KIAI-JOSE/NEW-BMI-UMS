@@ -1,8 +1,8 @@
-name: Deploy to GitHub Pages
+name: Deploy to Firebase Hosting
 
 on:
   push:
-    branches: [ MAIN-BMI, kiro-dev ]
+    branches: [ MAIN-BMI ]
   pull_request:
     branches: [ MAIN-BMI ]
 
@@ -27,12 +27,12 @@ jobs:
       run: npm run build
       env:
         NODE_ENV: production
-        VITE_APP_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        VITE_APP_URL: https://bmi-university-management.web.app
         
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/MAIN-BMI' || github.ref == 'refs/heads/kiro-dev'
+    - name: Deploy to Firebase Hosting
+      uses: FirebaseExtended/action-hosting-deploy@v0
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
-        cname: false
+        repoToken: '${{ secrets.GITHUB_TOKEN }}'
+        firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BMI_UNIVERSITY }}'
+        channelId: live
+        projectId: bmi-university-management

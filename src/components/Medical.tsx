@@ -4,7 +4,6 @@ import {
   Stethoscope, 
   Heart, 
   Activity, 
-  FileText, 
   Plus, 
   Search, 
   AlertCircle, 
@@ -16,7 +15,6 @@ import {
   Thermometer,
   Wind,
   Droplets,
-  ChevronRight,
   Printer,
   Trash2,
   History
@@ -27,7 +25,7 @@ interface MedicalProps {
   students: Student[];
 }
 
-const Medical: React.FC<MedicalProps> = ({ students }) => {
+export const Medical: React.FC<MedicalProps> = ({ students }) => {
   const [records, setRecords] = useState<MedicalVisit[]>(() => {
     const saved = localStorage.getItem('bmi_medical_records');
     return saved ? JSON.parse(saved) : [
@@ -45,6 +43,7 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<MedicalVisit | null>(null);
   const [newVisit, setNewVisit] = useState<Partial<MedicalVisit>>({
@@ -62,12 +61,14 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
   }, [records]);
 
   const filteredRecords = useMemo(() => {
-    return records.filter(rec => 
-      rec.studentName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      rec.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rec.condition.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [records, searchTerm]);
+    return records.filter(rec => {
+      const matchesSearch = rec.studentName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            rec.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            rec.condition.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'All' || rec.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [records, searchTerm, statusFilter]);
 
   const stats = {
     total: records.length,
@@ -110,127 +111,157 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
   };
 
   return (
-    <div className="p-8 space-y-8 animate-fade-in pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-100 dark:border-gray-800 pb-8">
-        <div>
-           <div className="flex items-center gap-4 mb-2">
-             <div className="w-3 h-12 bg-[#FFD700] rounded-none"></div>
-             <h2 className="text-3xl font-bold text-[#2E004F] dark:text-white tracking-tight uppercase">Health Center Portal</h2>
-          </div>
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 ml-7 uppercase tracking-widest">BMI Institutional Medical Registry • Patient Monitoring Node</p>
-        </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-8 py-4 bg-[#4B0082] text-white rounded-none shadow-xl hover:bg-black transition-all font-black text-xs uppercase tracking-widest border border-[#FFD700]/30"
-        >
-          <Plus size={18} className="text-[#FFD700]" /> New Medical Visit
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-none shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-red-500">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-none"><Heart size={24} /></div>
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Consultations</p>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{stats.total.toLocaleString()}</p>
-              </div>
+    <div className="h-full flex flex-col animate-fade-in relative">
+      {/* Sticky Header - Compact & Padded */}
+      <div className="flex-shrink-0 sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex flex-col md:flex-row justify-between items-center gap-2 shadow-sm min-h-[60px]">
+        <div className="flex items-center gap-3 pl-14 w-full md:w-auto">
+           <div className="w-1 h-5 bg-[#FFD700] rounded-none"></div>
+           <div className="flex flex-col">
+              <h2 className="text-base md:text-lg font-bold text-[#2E004F] dark:text-white tracking-tight uppercase leading-none">Health Center Portal</h2>
+              <p className="text-[8px] md:text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">BMI Institutional Medical Registry</p>
            </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-none shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-amber-500">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-none"><AlertCircle size={24} /></div>
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Urgent Cases (Current)</p>
-                <p className="text-3xl font-black text-amber-600">{stats.urgent}</p>
-              </div>
-           </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-none shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-[#4B0082]">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-[#4B0082] dark:text-purple-300 rounded-none"><Stethoscope size={24} /></div>
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Medical Staff On-Duty</p>
-                <p className="text-3xl font-black text-[#4B0082] dark:text-purple-300">{stats.activeStaff}</p>
-              </div>
-           </div>
+        <div className="flex items-center gap-4 pl-14 md:pl-0 w-full md:w-auto justify-end">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-2 bg-[#4B0082] text-white rounded-none shadow-xl hover:bg-black transition-all font-black text-[9px] uppercase tracking-widest border border-[#FFD700]/30"
+          >
+            <Plus size={12} className="text-[#FFD700]" /> New Medical Visit
+          </button>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-4 justify-between items-center bg-gray-900 text-white">
-          <div className="flex items-center gap-3">
-             <Activity size={18} className="text-[#FFD700]" />
-             <h3 className="font-black text-xs uppercase tracking-[0.25em]">Clinical Visit Ledger</h3>
+      {/* Sticky Top Tab Bar */}
+      <div className="sticky top-[60px] z-30 bg-[#F8F9FA]/95 dark:bg-[#0a0015]/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center gap-3 overflow-x-auto no-scrollbar shadow-sm">
+         <div className="flex items-center gap-2 mr-4 text-gray-400">
+            <Activity size={14} />
+            <span className="text-[9px] font-black uppercase tracking-widest">Triage Status</span>
+         </div>
+         {['All', 'Normal', 'Urgent', 'Follow-up'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                statusFilter === status 
+                  ? 'bg-[#4B0082] text-white shadow-lg shadow-purple-500/20 scale-105 border border-purple-500/50' 
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#4B0082]'
+              }`}
+            >
+              {status}
+            </button>
+         ))}
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-none shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-red-500">
+             <div className="flex items-center gap-4">
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-none"><Heart size={24} /></div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Consultations</p>
+                  <p className="text-3xl font-black text-gray-900 dark:text-white">{stats.total.toLocaleString()}</p>
+                </div>
+             </div>
           </div>
-          <div className="relative w-full md:w-80">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-             <input 
-              type="text" 
-              placeholder="Query by Student Name or ID..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs font-bold uppercase border border-gray-700 rounded-none outline-none bg-gray-800 text-white focus:border-[#FFD700]" 
-             />
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-none shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-amber-500">
+             <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-none"><AlertCircle size={24} /></div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Urgent Cases (Current)</p>
+                  <p className="text-3xl font-black text-amber-600">{stats.urgent}</p>
+                </div>
+             </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-none shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-[#4B0082]">
+             <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-[#4B0082] dark:text-purple-300 rounded-none"><Stethoscope size={24} /></div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Medical Staff On-Duty</p>
+                  <p className="text-3xl font-black text-[#4B0082] dark:text-purple-300">{stats.activeStaff}</p>
+                </div>
+             </div>
           </div>
         </div>
-        
-        <div className="overflow-x-auto no-scrollbar">
-           <table className="w-full text-left">
-              <thead>
-                 <tr className="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">
-                    <th className="px-6 py-5">Visit ID</th>
-                    <th className="px-6 py-5">Patient Details</th>
-                    <th className="px-6 py-5">Diagnosis/Condition</th>
-                    <th className="px-6 py-5 text-center">Blood Type</th>
-                    <th className="px-6 py-5 text-center">Protocol Date</th>
-                    <th className="px-6 py-5 text-center">Priority</th>
-                    <th className="px-6 py-5 text-right">Commit Actions</th>
-                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                 {filteredRecords.map((rec) => (
-                   <tr key={rec.id} onClick={() => setSelectedVisit(rec)} className="hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all cursor-pointer group">
-                      <td className="px-6 py-5 font-mono text-xs font-bold text-[#4B0082] dark:text-purple-300">{rec.id}</td>
-                      <td className="px-6 py-5">
-                         <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">{rec.studentName}</p>
-                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">{rec.studentId}</p>
-                      </td>
-                      <td className="px-6 py-5">
-                         <div className="flex items-center gap-2">
-                            <div className={`w-1 h-4 ${rec.status === 'Urgent' ? 'bg-red-500' : 'bg-[#4B0082]'}`}></div>
-                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">{rec.condition}</span>
-                         </div>
-                      </td>
-                      <td className="px-6 py-5 text-center font-black text-red-600 text-sm">{rec.bloodType}</td>
-                      <td className="px-6 py-5 text-center text-[10px] font-bold text-gray-500 uppercase">{rec.date}</td>
-                      <td className="px-6 py-5 text-center">
-                         <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border ${
-                            rec.status === 'Urgent' ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' : 
-                            rec.status === 'Follow-up' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                            'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          }`}>
-                            {rec.status}
-                          </span>
-                      </td>
-                      <td className="px-6 py-5 text-right">
-                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button className="p-2 text-gray-400 hover:text-[#4B0082]" title="Print Consultation Receipt"><Printer size={16}/></button>
-                            <button onClick={(e) => deleteRecord(rec.id, e)} className="p-2 text-gray-400 hover:text-red-500" title="Purge Record"><Trash2 size={16}/></button>
-                         </div>
-                      </td>
+
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 flex flex-col md:flex-row gap-4 items-center shadow-sm">
+           <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Query by Student Name, ID or Diagnosis..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-none outline-none font-bold text-sm dark:text-white focus:ring-1 focus:ring-[#4B0082]" 
+              />
+           </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-4 justify-between items-center bg-gray-900 text-white">
+            <div className="flex items-center gap-3">
+               <Activity size={18} className="text-[#FFD700]" />
+               <h3 className="font-black text-xs uppercase tracking-[0.25em]">Clinical Visit Ledger</h3>
+            </div>
+            <span className="text-[9px] font-bold text-gray-400 uppercase">Live Institutional Ledger</span>
+          </div>
+          
+          <div className="overflow-x-auto no-scrollbar">
+             <table className="w-full text-left">
+                <thead>
+                   <tr className="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">
+                      <th className="px-6 py-5">Visit ID</th>
+                      <th className="px-6 py-5">Patient Details</th>
+                      <th className="px-6 py-5">Diagnosis/Condition</th>
+                      <th className="px-6 py-5 text-center">Blood Type</th>
+                      <th className="px-6 py-5 text-center">Protocol Date</th>
+                      <th className="px-6 py-5 text-center">Priority</th>
+                      <th className="px-6 py-5 text-right">Commit Actions</th>
                    </tr>
-                 ))}
-                 {filteredRecords.length === 0 && (
-                   <tr><td colSpan={7} className="py-24 text-center text-gray-400 font-black uppercase tracking-[0.4em] text-sm italic">Zero (0) Medical Records Identified in Search</td></tr>
-                 )}
-              </tbody>
-           </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                   {filteredRecords.map((rec) => (
+                     <tr key={rec.id} onClick={() => setSelectedVisit(rec)} className="hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all cursor-pointer group">
+                        <td className="px-6 py-5 font-mono text-xs font-bold text-[#4B0082] dark:text-purple-300">{rec.id}</td>
+                        <td className="px-6 py-5">
+                           <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">{rec.studentName}</p>
+                           <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">{rec.studentId}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                           <div className="flex items-center gap-2">
+                              <div className={`w-1 h-4 ${rec.status === 'Urgent' ? 'bg-red-500' : 'bg-[#4B0082]'}`}></div>
+                              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">{rec.condition}</span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-5 text-center font-black text-red-600 text-sm">{rec.bloodType}</td>
+                        <td className="px-6 py-5 text-center text-[10px] font-bold text-gray-500 uppercase">{rec.date}</td>
+                        <td className="px-6 py-5 text-center">
+                           <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border ${
+                              rec.status === 'Urgent' ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' : 
+                              rec.status === 'Follow-up' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}>
+                              {rec.status}
+                            </span>
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                           <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button className="p-2 text-gray-400 hover:text-[#4B0082]" title="Print Consultation Receipt"><Printer size={16}/></button>
+                              <button onClick={(e) => deleteRecord(rec.id, e)} className="p-2 text-gray-400 hover:text-red-500" title="Purge Record"><Trash2 size={16}/></button>
+                           </div>
+                        </td>
+                     </tr>
+                   ))}
+                   {filteredRecords.length === 0 && (
+                     <tr><td colSpan={7} className="py-24 text-center text-gray-400 font-black uppercase tracking-[0.4em] text-sm italic">Zero (0) Medical Records Identified in Search</td></tr>
+                   )}
+                </tbody>
+             </table>
+          </div>
         </div>
-      </div>
 
-      {/* New Consultation Modal */}
-      {isModalOpen && (
+        {/* New Consultation Modal */}
+        {isModalOpen && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-[#1a0033]/95 backdrop-blur-3xl p-4">
            <div className="bg-white dark:bg-gray-900 w-full max-w-2xl shadow-2xl border-t-[8px] border-[#4B0082] overflow-hidden flex flex-col animate-slide-up">
               <div className="bg-gray-900 p-8 border-b-2 border-[#FFD700] flex justify-between items-center text-white">
@@ -257,7 +288,7 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
                       </select>
                     </div>
                  </div>
-
+                 
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em]">Primary Diagnosis / Condition</label>
                     <input 
@@ -269,7 +300,7 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
                       className="w-full px-5 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-none outline-none font-bold text-sm uppercase tracking-tight focus:border-[#4B0082]"
                     />
                  </div>
-
+                 
                  <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-2">
                        <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em]">Blood Group Identity</label>
@@ -295,6 +326,7 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
                     </div>
                  </div>
 
+                 {/* Vitals ... */}
                  <div className="p-6 border-2 border-[#4B0082]/10 bg-white dark:bg-gray-800 space-y-6">
                     <h4 className="text-[10px] font-black uppercase text-[#4B0082] dark:text-purple-300 tracking-[0.25em] flex items-center gap-2"><Activity size={14} /> Critical Vital Matrix</h4>
                     <div className="grid grid-cols-3 gap-4">
@@ -313,6 +345,7 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
                     </div>
                  </div>
 
+                 {/* Notes ... */}
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em]">Clinical Notes & Observations</label>
                     <textarea 
@@ -336,7 +369,7 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
               </form>
            </div>
         </div>
-      )}
+        )}
 
       {/* Record Detail Overlay */}
       {selectedVisit && (
@@ -447,7 +480,6 @@ const Medical: React.FC<MedicalProps> = ({ students }) => {
          </div>
       </div>
     </div>
+  </div>
   );
 };
-
-export default Medical;
