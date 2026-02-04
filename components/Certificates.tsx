@@ -169,167 +169,9 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
     if (!element) return;
 
     setIsProcessing(true);
-    
-    // Enhanced PDF generation with better CSS
-    const enhancedPrintWindow = (element: HTMLElement, title: string) => {
-      const win = window.open('', '_blank');
-      if (!win) {
-        window.print();
-        setIsProcessing(false);
-        return;
-      }
-
-      const pageWidth = orientation === 'landscape' ? '297mm' : '210mm';
-      const pageHeight = orientation === 'landscape' ? '210mm' : '297mm';
-
-      win.document.open();
-      win.document.write(`<!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${title}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman:wght@400;700&family=Courier+New&display=swap" rel="stylesheet">
-    <style>
-      @page { 
-        size: A4 ${orientation}; 
-        margin: 0; 
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-      }
-      
-      html, body { 
-        margin: 0 !important; 
-        padding: 0 !important; 
-        background: white !important;
-        font-family: 'Times New Roman', serif !important;
-        width: ${pageWidth} !important;
-        height: ${pageHeight} !important;
-        overflow: hidden !important;
-      }
-      
-      #official-certificate-root {
-        visibility: visible !important;
-        display: block !important;
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: ${pageWidth} !important;
-        height: ${pageHeight} !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: none !important;
-        background: #FFFAF0 !important;
-        overflow: hidden !important;
-        z-index: 9999 !important;
-        transform: scale(1) !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      
-      /* Preserve all positioning and colors */
-      #official-certificate-root .absolute { position: absolute !important; }
-      #official-certificate-root .fixed { position: fixed !important; }
-      #official-certificate-root * { 
-        visibility: visible !important; 
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      
-      /* Ensure borders and colors are preserved */
-      #official-certificate-root [style*="border"] {
-        border-color: inherit !important;
-      }
-      
-      #official-certificate-root [style*="background"] {
-        background-color: inherit !important;
-      }
-      
-      /* Fix SVG and image rendering */
-      #official-certificate-root img {
-        max-width: none !important;
-        height: auto !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      
-      /* Preserve text styling */
-      #official-certificate-root .text-\\[\\#4B0082\\] {
-        color: #4B0082 !important;
-      }
-      
-      #official-certificate-root .text-\\[\\#FFD700\\] {
-        color: #FFD700 !important;
-      }
-      
-      #official-certificate-root .bg-\\[\\#4B0082\\] {
-        background-color: #4B0082 !important;
-      }
-      
-      #official-certificate-root .bg-\\[\\#FFD700\\] {
-        background-color: #FFD700 !important;
-      }
-      
-      #official-certificate-root .border-\\[\\#4B0082\\] {
-        border-color: #4B0082 !important;
-      }
-      
-      #official-certificate-root .border-\\[\\#FFD700\\] {
-        border-color: #FFD700 !important;
-      }
-    </style>
-  </head>
-  <body>
-    ${element.outerHTML}
-    <script>
-      (function () {
-        const finalize = () => {
-          try { 
-            window.focus(); 
-            // Trigger print dialog with PDF option
-            window.print();
-          } catch (e) {}
-          setTimeout(() => window.close(), 500);
-        };
-        
-        // Wait for images to load
-        const imgs = Array.from(document.images || []);
-        let pending = imgs.length;
-        
-        if (pending === 0) {
-          setTimeout(finalize, 200);
-          return;
-        }
-        
-        const done = () => {
-          pending -= 1;
-          if (pending <= 0) setTimeout(finalize, 200);
-        };
-        
-        imgs.forEach((img) => {
-          if (img.complete) return done();
-          img.addEventListener('load', done);
-          img.addEventListener('error', done);
-        });
-        
-        // Fallback timeout
-        setTimeout(finalize, 2000);
-      })();
-    </script>
-  </body>
-</html>`);
-      win.document.close();
-    };
-
     const fileName = `CERTIFICATE_${activeRecord.serialNumber}`.toUpperCase();
-    enhancedPrintWindow(element, `${fileName}.PDF`);
-    
+
+    openCertificatePrintWindow(element, `${fileName}.PDF`);
     setTimeout(() => setIsProcessing(false), 1000);
   };
 
@@ -641,7 +483,7 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                        </button>
                     </div>
                     <button onClick={handleDownloadPdf} disabled={isProcessing} className="flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                       <Download size={16} /> {isProcessing ? 'Generating PDF...' : 'Download PDF'}
+                       <Download size={16} /> {isProcessing ? 'Generating...' : 'Download PDF'}
                     </button>
                     <button onClick={handlePrint} className="flex items-center gap-2 px-8 py-3 bg-[#4B0082] text-white text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-[#4B0082] transition-all">
                        <Printer size={16} /> Print Certificate
