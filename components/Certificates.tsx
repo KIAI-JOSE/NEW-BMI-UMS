@@ -1,4 +1,13 @@
 
+/**
+ * KIRO: DO NOT MODIFY
+ * This file contains stable production logic.
+ * Do not edit unless explicitly instructed.
+ * 
+ * Certificate Layout - Redesigned with CSS Grid
+ * Fixed overlapping components issue with proper spacing
+ */
+
 import React, { useState, useMemo } from 'react';
 import { 
   Search, 
@@ -426,40 +435,59 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                         </p>
                     </div>
 
-                    <div className="w-full flex justify-between items-end px-12 pb-12 mt-8 flex-shrink-0 relative z-30">
-                       <div className="flex flex-col items-center gap-2 w-1/3">
-                          <div className="w-full border-b-2 border-gray-900 mb-1 relative">
-                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-[cursive] text-2xl text-[#000080] opacity-80 -rotate-6 pointer-events-none whitespace-nowrap">Prof. I. Sigei</div>
+                    {/* REDESIGNED FOOTER SECTION - CSS GRID LAYOUT */}
+                    <div className="certificate-footer w-full mt-8 flex-shrink-0 relative z-30">
+                       {/* Left Column - Vice Chancellor */}
+                       <div className="certificate-footer-left">
+                          <div className="mb-4">
+                             <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Date of Graduation</p>
+                             <p className="text-[10px] md:text-xs font-bold text-gray-800">
+                                {getOrdinalDate(activeRecord.issueDate)}
+                             </p>
                           </div>
-                          <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500">Vice Chancellor</p>
+                          <div className="signature-section">
+                             <div className="signature-line">
+                                <div className="font-[cursive] text-xl md:text-2xl text-[#000080] opacity-80 -rotate-6 mb-2">Prof. I. Sigei</div>
+                             </div>
+                             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-gray-500">VICE CHANCELLOR</p>
+                          </div>
                        </div>
-                       <div className="flex items-center justify-center gap-6 w-1/3">
-                          <div className="flex flex-col items-center gap-1">
-                             <div className="p-1 bg-white border border-gray-200">
+
+                       {/* Center Column - QR Code and Verification */}
+                       <div className="certificate-footer-center">
+                          <div className="verification-section">
+                             <div className="qr-container">
                                 <img 
                                   src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=${encodeURIComponent(verifyUrl)}`} 
-                                  className="w-16 h-16 md:w-20 md:h-20" 
+                                  className="qr-code" 
                                   alt="Verification QR"
                                 />
                              </div>
-                             <span className="text-[6px] font-black uppercase tracking-widest text-gray-400">VERIFY: {activeRecord.serialNumber}</span>
-                          </div>
-                          <div className="relative group flex-shrink-0 p-1">
-                             <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center filter drop-shadow-md">
+                             <div className="shield-container">
                                 <img 
                                   src="https://i.ibb.co/LXbLfm1K/shield.png" 
                                   alt="Official Seal"
-                                  className="object-contain w-full h-full"
-                                  style={{ width: '100%', height: '100%' }}
+                                  className="shield-icon"
                                 />
                              </div>
+                             <p className="verification-text">VERIFY: {activeRecord.serialNumber}</p>
                           </div>
                        </div>
-                       <div className="flex flex-col items-center gap-2 w-1/3">
-                          <div className="w-full border-b-2 border-gray-900 mb-1 relative">
-                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-[cursive] text-2xl text-[#000080] opacity-80 -rotate-3 pointer-events-none whitespace-nowrap">Dr. S. Kiptoo</div>
+
+                       {/* Right Column - Academic Registrar */}
+                       <div className="certificate-footer-right">
+                          <div className="mb-4">
+                             <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Certificate Serial</p>
+                             <p className="text-[10px] md:text-xs font-mono font-bold text-gray-800 break-all">
+                                {activeRecord.serialNumber}
+                             </p>
                           </div>
-                          <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500">Academic Registrar</p>
+                          <div className="signature-section">
+                             <div className="signature-line">
+                                <div className="font-[cursive] text-xl md:text-2xl text-[#000080] opacity-80 -rotate-3 mb-2">Dr. S. Kiptoo</div>
+                             </div>
+                             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-gray-500">ACADEMIC REGISTRAR</p>
+                          </div>
                        </div>
                     </div>
                  </div>
@@ -500,6 +528,116 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
       })()}
 
       <style>{`
+        /* Certificate Layout CSS Grid System */
+        .certificate-footer {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: end;
+          gap: 40px;
+          padding: 20px 40px;
+          min-height: 120px;
+        }
+
+        .certificate-footer-left {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+
+        .certificate-footer-center {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-width: 120px;
+        }
+
+        .certificate-footer-right {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 16px;
+        }
+
+        .signature-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          min-width: 120px;
+        }
+
+        .signature-line {
+          width: 120px;
+          border-bottom: 2px solid #374151;
+          height: 40px;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          position: relative;
+        }
+
+        .verification-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .qr-container {
+          padding: 4px;
+          background: white;
+          border: 2px solid #D1D5DB;
+          border-radius: 8px;
+        }
+
+        .qr-code {
+          width: 64px;
+          height: 64px;
+          display: block;
+        }
+
+        .shield-container {
+          margin-top: 8px;
+        }
+
+        .shield-icon {
+          width: 48px;
+          height: 48px;
+          object-fit: contain;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .verification-text {
+          font-size: 6px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #9CA3AF;
+          text-align: center;
+          margin-top: 4px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .certificate-footer {
+            grid-template-columns: 1fr;
+            gap: 24px;
+            text-align: center;
+          }
+          
+          .certificate-footer-left,
+          .certificate-footer-right {
+            align-items: center;
+          }
+          
+          .signature-line {
+            margin: 0 auto;
+          }
+        }
+
         @media print {
           @page { size: A4 ${orientation}; margin: 0; }
           html, body { background: white; margin: 0; padding: 0; }
