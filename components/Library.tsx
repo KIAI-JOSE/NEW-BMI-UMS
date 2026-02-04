@@ -397,6 +397,8 @@ export const Library: React.FC<LibraryProps> = ({ library, setLibrary, courses }
           </div>
         )}
 
+      </div>
+
       {selectedItem && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#1a0033]/95 backdrop-blur-3xl p-4 md:p-8">
            <div className="bg-white dark:bg-gray-900 w-full max-w-5xl h-[90vh] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)] border-t-[8px] border-[#4B0082] overflow-hidden flex flex-col animate-slide-up">

@@ -141,62 +141,18 @@ export const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, log
 
   const handlePrint = async (mode: 'print' | 'download' = 'print') => {
     if (!selectedStudent) return;
-    const element = document.getElementById('official-transcript-root');
-    if (!element) return;
     const fileName = `${transcriptType}_TRANSCRIPT_${selectedStudent.id}_${selectedStudent.lastName}`.toUpperCase();
-    
-    if (mode === 'download') {
-      try {
-        const html2pdfModule = await import('https://esm.sh/html2pdf.js@0.10.1?bundle');
-        const html2pdf = html2pdfModule.default;
-        if (typeof html2pdf !== 'function') throw new Error("html2pdf is not a function");
-        const opt = {
-          margin: 0,
-          filename: `${fileName}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        await html2pdf().set(opt).from(element).save();
-      } catch (err) {
-        console.error("PDF download failed", err);
-        window.print();
-      }
-    } else {
-      const originalTitle = document.title;
-      document.title = fileName;
-      window.print();
-      setTimeout(() => { document.title = originalTitle; }, 1000);
-    }
+    const originalTitle = document.title;
+    document.title = mode === 'download' ? `${fileName}.PDF` : fileName;
+    window.print();
+    setTimeout(() => { document.title = originalTitle; }, 1000);
   };
 
   const handleShare = async (platform?: 'whatsapp') => {
     if (!selectedStudent) return;
-    const element = document.getElementById('official-transcript-root');
-    if (!element) return;
     if (platform === 'whatsapp') {
-       try {
-          const html2pdfModule = await import('https://esm.sh/html2pdf.js@0.10.1?bundle');
-          const html2pdf = html2pdfModule.default;
-          const pdfBlob = await html2pdf().from(element).set({
-            margin: 0,
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          }).output('blob');
-          const file = new File([pdfBlob], `TRANSCRIPT_${selectedStudent.id}.pdf`, { type: 'application/pdf' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-             await navigator.share({
-                files: [file],
-                title: `${transcriptType} Academic Transcript`,
-                text: `${transcriptType} transcript for ${selectedStudent.firstName} ${selectedStudent.lastName} (${selectedStudent.id})`
-             });
-          } else {
-             const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(transcriptType + " Academic Transcript for " + selectedStudent.firstName + " " + selectedStudent.lastName + " (" + selectedStudent.id + ")")}`;
-             window.open(waUrl, '_blank');
-          }
-       } catch (err) {
-          const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent("Academic Transcript Link: " + window.location.href)}`;
-          window.open(waUrl, '_blank');
-       }
+       const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(transcriptType + " Academic Transcript for " + selectedStudent.firstName + " " + selectedStudent.lastName + " (" + selectedStudent.id + ")\n\n" + window.location.href)}`;
+       window.open(waUrl, '_blank');
        return;
     }
     handlePrint('print');
@@ -457,7 +413,7 @@ export const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, log
 
                  <div className="border-b border-gray-900 py-2 text-[11px] font-black relative z-10 px-4 bg-gray-50/20">
                     <div className="flex gap-8">
-                       <span className="text-gray-600 font-sans text-[9px]">PERFORMANCE METRICS :></span>
+                       <span className="text-gray-600 font-sans text-[9px]">PERFORMANCE METRICS :&gt;</span>
                        <span>Current Avg: <span className="text-[#4B0082]">{stats.current}%</span></span>
                        <span>| Cumulative Avg: <span className="text-[#4B0082]">{stats.cumulative}%</span></span>
                     </div>
@@ -534,6 +490,8 @@ export const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, log
            </div>
         </div>
         )}
+
+      </div>
 
       <style>{`
         @media print {

@@ -478,7 +478,8 @@ export const Medical: React.FC<MedicalProps> = ({ students }) => {
                Medical records are strictly confidential and governed by BMI Institutional Privacy Mandates. Access is logged and monitored. Unauthorized disclosure of patient health data is a severe policy violation.
             </p>
          </div>
-      </div>
+       </div>
+     </div>
     </div>
   );
 };
