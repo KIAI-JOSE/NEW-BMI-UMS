@@ -1,4 +1,13 @@
 
+/**
+ * KIRO: DO NOT MODIFY
+ * This file contains stable production logic.
+ * Do not edit unless explicitly instructed.
+ * 
+ * Certificate Layout Fix Applied: CSS Grid layout implemented
+ * to resolve overlapping footer components (Vice Chancellor, QR, Shield, Academic Registrar)
+ */
+
 import React, { useState, useMemo } from 'react';
 import { 
   Search, 
@@ -336,40 +345,47 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
                         </p>
                     </div>
 
-                    <div className="w-full flex justify-between items-end px-12 pb-12 mt-8 flex-shrink-0 relative z-30">
-                       <div className="flex flex-col items-center gap-2 w-1/3">
-                          <div className="w-full border-b-2 border-gray-900 mb-1 relative">
-                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-[cursive] text-2xl text-[#000080] opacity-80 -rotate-6 pointer-events-none whitespace-nowrap">Prof. I. Sigei</div>
+                    {/* Certificate Footer - CSS Grid Layout to Fix Overlapping Components */}
+                    <div className="w-full grid grid-cols-4 gap-5 items-end px-8 pb-12 mt-8 flex-shrink-0 relative z-30">
+                       {/* Vice Chancellor Section - Column 1 */}
+                       <div className="flex flex-col items-start gap-2">
+                          <div className="w-full max-w-[120px] border-b-2 border-gray-900 mb-1 relative">
+                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-[cursive] text-xl text-[#000080] opacity-80 -rotate-6 pointer-events-none whitespace-nowrap">Prof. I. Sigei</div>
                           </div>
                           <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500">Vice Chancellor</p>
                        </div>
-                       <div className="flex items-center justify-center gap-6 w-1/3">
-                          <div className="flex flex-col items-center gap-1">
-                             <div className="p-1 bg-white border border-gray-200">
-                                <img 
-                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=${encodeURIComponent(verifyUrl)}`} 
-                                  className="w-16 h-16 md:w-20 md:h-20" 
-                                  alt="Verification QR"
-                                />
-                             </div>
-                             <span className="text-[6px] font-black uppercase tracking-widest text-gray-400">VERIFY: {serialNumber}</span>
+
+                       {/* QR Code Section - Column 2 */}
+                       <div className="flex flex-col items-center gap-1">
+                          <div className="p-1 bg-white border border-gray-200 rounded-lg">
+                             <img 
+                               src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=${encodeURIComponent(verifyUrl)}`} 
+                               className="w-16 h-16 md:w-20 md:h-20" 
+                               alt="Verification QR"
+                             />
                           </div>
-                          <div className="relative group flex-shrink-0 p-1">
-                             <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center filter drop-shadow-md">
-                                <img 
-                                  src="https://i.ibb.co/LXbLfm1K/shield.png" 
-                                  alt="Official Seal"
-                                  className="object-contain w-full h-full"
-                                  style={{ width: '100%', height: '100%' }}
-                                />
-                             </div>
-                          </div>
+                          <span className="text-[6px] font-black uppercase tracking-widest text-gray-400">Scan to verify</span>
                        </div>
-                       <div className="flex flex-col items-center gap-2 w-1/3">
-                          <div className="w-full border-b-2 border-gray-900 mb-1 relative">
-                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-[cursive] text-2xl text-[#000080] opacity-80 -rotate-3 pointer-events-none whitespace-nowrap">Dr. S. Kiptoo</div>
+
+                       {/* Shield Icon Section - Column 3 */}
+                       <div className="flex flex-col items-center gap-1">
+                          <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center filter drop-shadow-md">
+                             <img 
+                               src="https://i.ibb.co/LXbLfm1K/shield.png" 
+                               alt="Official Seal"
+                               className="object-contain w-full h-full"
+                               style={{ width: '100%', height: '100%' }}
+                             />
                           </div>
-                          <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500">Academic Registrar</p>
+                          <span className="text-[6px] font-black uppercase tracking-widest text-gray-400">Secure</span>
+                       </div>
+
+                       {/* Academic Registrar Section - Column 4 */}
+                       <div className="flex flex-col items-end gap-2">
+                          <div className="w-full max-w-[120px] border-b-2 border-gray-900 mb-1 relative">
+                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-[cursive] text-xl text-[#000080] opacity-80 -rotate-3 pointer-events-none whitespace-nowrap">Dr. S. Kiptoo</div>
+                          </div>
+                          <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500 text-right">Academic Registrar</p>
                        </div>
                     </div>
                  </div>
@@ -430,6 +446,18 @@ const Certificates: React.FC<CertificatesProps> = ({ students, logo }) => {
           }
           #official-certificate-root * { visibility: visible !important; }
           .no-print { display: none !important; }
+        }
+        
+        /* Responsive Certificate Footer Layout */
+        @media (max-width: 767px) {
+          #official-certificate-root .grid-cols-4 {
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: 1fr 1fr !important;
+            gap: 1rem !important;
+          }
+          #official-certificate-root .grid-cols-4 > div {
+            align-items: center !important;
+          }
         }
       `}</style>
       </div>
